@@ -7,7 +7,7 @@ var port = 3800;
 //Conexion a la DB
 mongoose.set('useFindAndModify', false);
 mongoose.Promise = global.Promise;
-mongoose.connect('mongodb://localhost:27017/curso_mean_social', { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect('mongodb://localhost:27017/koneksi_bd', { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => {
         console.log('La conexion a la bd se ha realizado correctamente.');
 
