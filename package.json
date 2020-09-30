@@ -1,0 +1,19 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Backend del proyecto koneksi",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChavaMS/koneksi-Backend.git"
+  },
+  "author": "Josué, Germán y Salvador",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ChavaMS/koneksi-Backend/issues"
+  },
+  "homepage": "https://github.com/ChavaMS/koneksi-Backend#readme"
+} 
