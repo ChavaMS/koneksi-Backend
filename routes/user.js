@@ -9,5 +9,6 @@ var api = express.Router();
 
 api.get('/pruebas',UserController.pruebas);
 api.get('/home',UserController.home);
+api.post('/saveUser', UserController.saveUser);
 
 module.exports = api;

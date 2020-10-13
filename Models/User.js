@@ -11,6 +11,7 @@ var UserSchema = Schema({
     email: String,
     password: String,
     image: String,
+    cover_page: String,
     type: String,
     lat: String,
     lon: String,
