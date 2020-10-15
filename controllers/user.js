@@ -2,6 +2,12 @@
 
 var User = require('../models/User');
 var bcrypt = require('bcrypt-nodejs');
+var uploadProfile = require("../middlewares/storageProfile");
+var uploadBanner = require("../middlewares/storageBanner");
+var uploadProducts = require("../middlewares/storageProducts");
+
+
+
 var jwt = require('../services/jwt.js');
 var fs = require('fs');
 var path = require('path');
@@ -18,12 +24,71 @@ function pruebas(req, res) {
 //---------------------
 
 //Registro
+//Utiliza: form-data
 function saveUser(req, res) {
+    uploadProfile(req, res, function (err) {
+        if (err) {
+            return res.end("Error uploading file");
+        }
 
-    var params = req.body;
-    var user = new User();
+        //DATOS
+        var params = req.body;
+        var user = new User();
+        var file_name = req.file.filename;
 
-    switch (params.type) {
+        if (params.name && params.surname && params.email && params.password) {
+            user.name = params.name;
+            user.surname = params.surname;
+            user.email = params.email;
+            user.type = params.type;
+            user.image = file_name;
+            user.cover_page = null;
+
+            User.find({
+                email: user.email.toLowerCase()
+            }).exec((err, users) => {
+                if (err) {
+                    // AGREGAR ELIMINAR IMAGEN
+                    return res.status(500).send({ message: 'Error en la petición de usuarios' });
+                }
+
+
+                if (users && users.length >= 1) {
+                    // AGREGAR ELIMINAR IMAGEN
+                    return res.status(200).send({ message: 'El usuario ya esta registrado' });
+                } else {
+                    //Cifra la password y me guarda los datos
+                    bcrypt.hash(params.password, null, null, (err, hash) => {
+                        user.password = hash;
+
+                        user.save((err, userStored) => {
+                            if (err) {
+                                // AGREGAR ELIMINAR IMAGEN
+                                return res.status(500).send({ message: 'Error al guardar el usuario' });
+                            }
+                            if (userStored) {
+                                res.status(200).send({ user: userStored });
+                            } else {
+                                // AGREGAR ELIMINAR IMAGEN
+                                res.status(404).send({ message: 'No se ha registrado el usuario' });
+                            }
+                        });
+                    });
+                }
+            });
+        } else {
+            res.status(200).send({ message: 'Envia todos los campos necesarios' });
+        }
+    });
+
+
+
+
+
+
+
+
+    /* switch (params.type) {
         case 'client':
             saveClient(params, user, res);
             break;
@@ -37,45 +102,47 @@ function saveUser(req, res) {
             saveClientService(params, user, res);
             break;
     }
-
+ */
 }
 
-function saveClient(params, user, res) {
-    if (params.name && params.surname && params.email && params.password) {
-        user.name = params.name;
-        user.surname = params.surname;
-        user.email = params.email;
-        user.type = params.type;
-        user.image = null;
 
-        User.find({
-            email: user.email.toLowerCase()
-        }).exec((err, users) => {
-            if (err) return res.status(500).send({ message: 'Error en la petición de usuarios' });
+function updateCoverPage(req, res) {
+    uploadProfile(req, res, function (err) {
+        if (err) {
+            return res.end("Error uploading file");
+        }
 
-            if (users && users.length >= 1) {
-                return res.status(200).send({ message: 'El usuario ya esta registrado' });
-            } else {
-                //Cifra la password y me guarda los datos
-                bcrypt.hash(params.password, null, null, (err, hash) => {
-                    user.password = hash;
+        //DATOS
+        var email = req.body.email;
+        var user = new User();
+        var file_name = req.file.filename;
+        console.log(email);
+        console.log(file_name);
 
-                    user.save((err, userStored) => {
-                        if (err) {
-                            return res.status(500).send({ message: 'Error al guardar el usuario' });
-                        }
-                        if (userStored) {
-                            res.status(200).send({ user: userStored });
-                        } else {
-                            res.status(404).send({ message: 'No se ha registrado el usuario' });
-                        }
-                    });
-                });
+        User.findOneAndUpdate({ email: email }, { $set: { cover_page : file_name } }).exec((err, user) => {
+            if (err) {
+                res.status(200).send({ message: 'Error al actualizar el banner' });
             }
+
+            if (user) {
+                res.status(200).send({ user: user });
+            }
+
         });
-    } else {
-        res.status(200).send({ message: 'Envia todos los campos necesarios' });
-    }
+
+    });
+}
+
+/* 
+function removeFileOfUploads(res, file_path, message) {
+    fs.unlink(file_path, (err) => {
+        return res.status(200).send({ message: message });
+    });
+}
+
+
+function saveClient(params, user, res) {
+
 }
 
 function saveClientWork(params, user, res) {
@@ -91,8 +158,8 @@ function saveClientProduct(params, user, res) {
 function saveClientService(params, user, res) {
 
 }
-
-//Subir archivos de imagen/avatar de usuario
+ */
+/* //Subir archivos de imagen/avatar de usuario
 function uploadImage(req, res) {
     var userId = req.params.id;
 
@@ -128,17 +195,23 @@ function uploadImage(req, res) {
     }
 }
 
-function removeFileOfUploads(res, file_path, message) {
-    fs.unlink(file_path, (err) => {
-        return res.status(200).send({ message: message });
+
+function getImageFile(req, res) {
+    var imageFile = req.params.imageFile;
+    var path_file = 'uploads/users/' + imageFile;
+    fs.exists(path_file, (exists) => {
+        if (exists) {
+            res.sendFile(path.resolve(path_file));
+        } else {
+            res.status(200).send({ message: 'No existe la imagen' });
+        }
     });
 }
 
-
-
+ */
 module.exports = {
     pruebas,
     home,
     saveUser,
-    saveClient
+    updateCoverPage
 }
