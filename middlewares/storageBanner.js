@@ -5,10 +5,11 @@ const storage = multer.diskStorage({
         cb(null, './uploads/users/banner');
     },
     filename: function (req, file, cb) {
-        cb(null, file.fieldname + '-' + Date.now());
+        let type = file.mimetype.split("/")[1];
+        cb(null, file.fieldname + '-' + Date.now() + "." + type);
     }
 })
 
 const upload = multer({ storage });
 
-module.exports = upload.single("img");
+module.exports = upload.single("coverPage");
