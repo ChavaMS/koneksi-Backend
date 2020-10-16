@@ -79,6 +79,39 @@ function saveUser(req, res) {
 
 }
 
+function loginUser(req, res) {
+    var params = req.body;
+
+    var email = params.email;
+    var password = params.password;
+
+    User.findOne({ email: email }, (err, user) => {
+        if (err) return res.status(404).send({ message: 'Error en la peticion' });
+
+        if (user) {
+            bcrypt.compare(password, user.password, (err, check) => {
+                if (check) {
+                    //Devolver datos de usuario
+                    if (params.gettoken) {
+                        //generar y devolver token 
+                        return res.status(200).send({
+                            token: jwt.createToken(user)
+                        });
+                    } else {
+                        //Devolver datos en claro
+                        user.password = undefined;
+                        return res.status(200).send({ user });
+                    }
+
+                } else {
+                    return res.status(404).send({ message: 'El usuario no se ha podido identificar' });
+                }
+            });
+        } else {
+            return res.status(404).send({ message: 'El usuario no se ha podido identificar' });
+        }
+    });
+}
 
 function updateCoverPage(req, res) {
     uploadBanner(req, res, function (err) {
@@ -91,7 +124,7 @@ function updateCoverPage(req, res) {
         if (email && file_name) {
             User.findOneAndUpdate({ email: email }, { $set: { cover_page: file_name } }).exec((err, user) => {
                 if (err) {
-                    return removeFileOfUploads(res,userProfilePath+file_name,"Error al actualizar el banner");
+                    return removeFileOfUploads(res,userCoverPath+file_name,"Error al actualizar el banner");
                 }
 
                 if (user) {
