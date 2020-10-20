@@ -8,10 +8,6 @@ var api = express.Router();
 var md_auth = require('../middlewares/authenticate');
 
 
-//SIN USO
-var multipart = require('connect-multiparty');
-//var md_upload = multipart({uploadDir: './uploads/users'});
-
 api.get('/pruebas', UserController.pruebas);
 api.get('/home', UserController.home);
 api.get('/get-image-profile', UserController.getImageProfile);

@@ -4,7 +4,7 @@ var User = require('../models/User');
 var bcrypt = require('bcrypt-nodejs');
 var uploadProfile = require("../middlewares/storageProfile");
 var uploadBanner = require("../middlewares/storageBanner");
-var uploadProducts = require("../middlewares/storageProducts");
+//var uploadProducts = require("../middlewares/storageProducts");
 
 
 var userProfilePath = "./uploads/users/profile/";
@@ -12,7 +12,7 @@ var userCoverPath = "./uploads/users/banner/";
 var jwt = require('../services/jwt.js');
 var fs = require('fs');
 var path = require('path');
-const { type } = require('os');
+//const { type } = require('os');
 
 //-------PRUEBAS--------
 function home(req, res) {
