@@ -48,12 +48,12 @@ function saveUser(req, res) {
             User.find({
                 email: user.email.toLowerCase()
             }).exec((err, users) => {
-                if (err) {  
-                    return removeFileOfUploads(res,userProfilePath+file_name,"Error en la petición de usuarios");
+                if (err) {
+                    return removeFileOfUploads(res, userProfilePath + file_name, "Error en la petición de usuarios");
                 }
 
                 if (users && users.length >= 1) {
-                    return removeFileOfUploads(res,userProfilePath+file_name,"El usuario ya esta registrado");
+                    return removeFileOfUploads(res, userProfilePath + file_name, "El usuario ya esta registrado");
                 } else {
                     //Cifra la password y me guarda los datos
                     bcrypt.hash(params.password, null, null, (err, hash) => {
@@ -61,19 +61,19 @@ function saveUser(req, res) {
 
                         user.save((err, userStored) => {
                             if (err) {
-                                return removeFileOfUploads(res,userProfilePath+file_name,"Error al guardar el usuario");
+                                return removeFileOfUploads(res, userProfilePath + file_name, "Error al guardar el usuario");
                             }
                             if (userStored) {
                                 res.status(200).send({ user: userStored });
                             } else {
-                               return removeFileOfUploads(res,userProfilePath+file_name,"No se ha registrado el usuario");
+                                return removeFileOfUploads(res, userProfilePath + file_name, "No se ha registrado el usuario");
                             }
                         });
                     });
                 }
             });
         } else {
-            return removeFileOfUploads(res,userProfilePath+file_name,"Envia todos los campos necesarios")
+            return removeFileOfUploads(res, userProfilePath + file_name, "Envia todos los campos necesarios")
         }
     });
 
@@ -85,33 +85,71 @@ function loginUser(req, res) {
     var email = params.email;
     var password = params.password;
 
-    User.findOne({ email: email }, (err, user) => {
-        if (err) return res.status(404).send({ message: 'Error en la peticion' });
+    if (email && password) {
+        User.findOne({ email: email }, (err, user) => {
+            if (err) return res.status(404).send({ message: 'Error en la peticion' });
 
-        if (user) {
-            bcrypt.compare(password, user.password, (err, check) => {
-                if (check) {
-                    //Devolver datos de usuario
-                    if (params.gettoken) {
-                        //generar y devolver token 
-                        return res.status(200).send({
-                            token: jwt.createToken(user)
-                        });
+            if (user) {
+                bcrypt.compare(password, user.password, (err, check) => {
+                    if (check) {
+                        //Devolver datos de usuario
+                        if (params.gettoken) {
+                            //generar y devolver token 
+                            return res.status(200).send({
+                                token: jwt.createToken(user)
+                            });
+                        } else {
+                            //Devolver datos en claro
+                            user.password = undefined;
+                            return res.status(200).send({ user });
+                        }
+
                     } else {
-                        //Devolver datos en claro
-                        user.password = undefined;
-                        return res.status(200).send({ user });
+                        return res.status(404).send({ message: 'El usuario no se ha podido identificar' });
                     }
+                });
+            } else {
+                return res.status(404).send({ message: 'El usuario no se ha podido identificar' });
+            }
+        });
+    }
 
-                } else {
-                    return res.status(404).send({ message: 'El usuario no se ha podido identificar' });
-                }
+}
+
+//Edicion de datos de usuario
+function updateUser(req, res) {
+    var userId = req.params.id;
+    var update = req.body;
+    console.log(req.params);
+    
+    //Borrar propiedad password
+    delete update.password;
+    if (userId != req.user.sub) {
+        return res.status(200).send({ message: 'No tienes permiso para actualizar los datos del usuario' });
+    }
+    User.find({ email: update.email.toLowerCase() }
+    ).exec((err, users) => {
+
+        var user_isset = false;
+        users.forEach((user) => {
+            if (user && user._id != userId) user_isset = true;
+        });
+
+        if (user_isset) res.status(500).send({ message: 'Los datos ya estan en uso' });
+
+        User.findByIdAndUpdate(userId, update, { new: true }, (err, userUpdated) => {
+            if (err) return res.status(500).send({ message: 'Error en la petición' });
+
+            if (!userUpdated) return res.status(404).send({ message: 'No se ha podido actualizar el usuario' });
+
+            return res.status(200).send({
+                user: userUpdated
             });
-        } else {
-            return res.status(404).send({ message: 'El usuario no se ha podido identificar' });
-        }
+        });
+
     });
 }
+
 
 function updateCoverPage(req, res) {
     uploadBanner(req, res, function (err) {
@@ -124,7 +162,7 @@ function updateCoverPage(req, res) {
         if (email && file_name) {
             User.findOneAndUpdate({ email: email }, { $set: { cover_page: file_name } }).exec((err, user) => {
                 if (err) {
-                    return removeFileOfUploads(res,userCoverPath+file_name,"Error al actualizar el banner");
+                    return removeFileOfUploads(res, userCoverPath + file_name, "Error al actualizar el banner");
                 }
 
                 if (user) {
@@ -177,5 +215,7 @@ module.exports = {
     saveUser,
     updateCoverPage,
     getImageProfile,
-    getImageCover
+    getImageCover,
+    loginUser,
+    updateUser
 }
