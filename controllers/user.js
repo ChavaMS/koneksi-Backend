@@ -4,7 +4,7 @@ var User = require('../models/User');
 var bcrypt = require('bcrypt-nodejs');
 var uploadProfile = require("../middlewares/storageProfile");
 var uploadBanner = require("../middlewares/storageBanner");
-//var uploadProducts = require("../middlewares/storageProducts");
+var userProductsController = require("../controllers/userProducts");
 
 
 var userProfilePath = "./uploads/users/profile/";
@@ -29,7 +29,8 @@ function pruebas(req, res) {
 function saveUser(req, res) {
     uploadProfile(req, res, function (err) {
         if (err) {
-            return res.end("Error uploading file");
+            console.log(err);
+            return res.end("Error uploading file 1");
         }
 
         //DATOS
@@ -177,7 +178,6 @@ function updateCoverPage(req, res) {
 
 //MANEJO DE ARCHIVOS
 function removeFileOfUploads(res, file_path, message) {
-    console.log(file_path);
     fs.unlink(file_path, (err) => {
         return res.status(200).send({ message: message });
     });
@@ -185,7 +185,7 @@ function removeFileOfUploads(res, file_path, message) {
 
 
 function getImageProfile(req, res) {
-    var imageFile = req.body.imageFile;
+    var imageFile = req.params.imageFile;
     var path_file = 'uploads/users/profile/' + imageFile;
     fs.exists(path_file, (exists) => {
         if (exists) {
@@ -198,7 +198,7 @@ function getImageProfile(req, res) {
 
 
 function getImageCover(req, res) {
-    var imageFile = req.body.imageFile;
+    var imageFile = req.params.imageFile;
     var path_file = 'uploads/users/banner/' + imageFile;
     fs.exists(path_file, (exists) => {
         if (exists) {

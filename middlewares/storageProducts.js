@@ -5,8 +5,11 @@ const storage = multer.diskStorage({
         cb(null, './uploads/userProducts/products');
     },
     filename: function (req, file, cb) {
-        let type = file.mimetype.split("/")[1];
-        cb(null, file.fieldname + '-' + Date.now() + "." + type);
+        if (file != null) {
+            let type = file.mimetype.split("/")[1];
+            cb(null, file.fieldname + '-' + Date.now() + "." + type);
+        }
+
     }
 })
 
