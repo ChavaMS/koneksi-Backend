@@ -175,7 +175,7 @@ function updateCoverPage(req, res) {
     });
 }
 
-
+ 
 //MANEJO DE ARCHIVOS
 function removeFileOfUploads(res, file_path, message) {
     fs.unlink(file_path, (err) => {
