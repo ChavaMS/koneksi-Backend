@@ -5,10 +5,14 @@ const storage = multer.diskStorage({
         cb(null, './uploads/userProducts/products');
     },
     filename: function (req, file, cb) {
-        cb(null, file.fieldname + '-' + Date.now());
+        if (file != null) {
+            let type = file.mimetype.split("/")[1];
+            cb(null, file.fieldname + '-' + Date.now() + "." + type);
+        }
+
     }
 })
 
 const upload = multer({ storage });
 
-module.exports = upload.single("img");
+module.exports = upload.array("product");
