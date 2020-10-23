@@ -16,6 +16,15 @@ function pruebas(req, res) {
 }
 //---------------------
 
+/* 
+x-www-form-utlencoded:
+    *description
+    *schedule
+    *type -> JobId
+    *user
+
+    URL: /save-user-jobs
+*/
 function saveUserJobs(req, res) {
     //DATOS
     var params = req.body;
@@ -57,6 +66,9 @@ function saveUserJobs(req, res) {
     }
 }
 
+/* 
+    URL: /delete-job/:id -> id del producto
+*/
 function deleteUserJob(req, res) {
     var userJobtId = req.params.id;
 
@@ -68,6 +80,15 @@ function deleteUserJob(req, res) {
     });
 }
 
+/* 
+x-www-form-utlencoded:
+    *description
+    *schedule
+    *type -> JobId
+    *user
+
+    URL: /update-user-job/:id -> id del trabajo a editar
+*/
 function updateUserJob(req, res) {
 
     var userJobId = req.params.id;
@@ -84,21 +105,49 @@ function updateUserJob(req, res) {
     });
 }
 
+/*
+    URL: /get-user-jobs/:id -> id del cliente con oficios
+    URL: /get-user-jobs     -> Todos los oficios creados
+*/
 function getUserJobs(req, res) {
 
     var userId = req.params.id;
+    if (userId) {
+        UserJobs.find({ user: userId }).populate('jobs user').exec((err, result) => {
+            if (err) return res.status(200).send({ message: 'Error al buscar oficios' });
 
-    UserJobs.find({ user: userId }).exec((err, result) => {
-        if (err) return res.status(200).send({ message: 'Error al buscar oficios' });
+            if (!result) return res.status(404).send({ message: 'No hay oficios que mostrar' });
 
-        if (!result) return res.status(404).send({ message: 'No hay oficios que mostrar' });
-
-        return res.status(200).send({
-            userJobs: result
+            return res.status(200).send({
+                userJobs: result
+            });
         });
-    });
+    } else {
+        UserJobs.find().populate('jobs user').exec((err, result) => {
+            if (err){ 
+                console.log(err);
+                return res.status(200).send({ message: 'Error al buscar oficios' });
+                
+            }
+            if (!result) return res.status(404).send({ message: 'No hay oficios que mostrar' });
+
+            return res.status(200).send({
+                userJobs: result
+            });
+        });
+    }
+
 }
 
+/* 
+x-www-form-utlencoded:
+    *description
+    *schedule
+    *type -> JobId
+    *user
+
+    URL: /save-user-job
+*/
 function saveUserJob(req, res) {
     //DATOS
     var params = req.body;

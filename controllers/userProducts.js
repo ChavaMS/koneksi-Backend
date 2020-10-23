@@ -19,6 +19,16 @@ function pruebas(req, res) {
 }
 //---------------------
 
+/* 
+FORM-DATA:
+    *name
+    *description
+    *price
+    *product [image]
+    *user 
+
+    URL: /save-products
+*/
 function saveProducts(req, res) {
     uploadProducts(req, res, function (err) {
         if (err) {
@@ -52,6 +62,9 @@ function saveProducts(req, res) {
             } else {
                 transaction.rollback();
                 transaction.clean();
+                for (let i = 0; i < file_name.length; i++) {
+                    removeFileOfUploads(res, userProductsImagePath + file_name[i].filename, "Error al actualizar el banner");
+                }
                 return res.status(200).send({ message: "Error al agregar los productos" });
             }
 
@@ -60,7 +73,7 @@ function saveProducts(req, res) {
                 removeFileOfUploads(res, userProductsImagePath + file_name[i].filename, "Error al actualizar el banner");
             }
             console.error(error);
-            const rollbackObj = transaction.rollback().catch(console.error);
+            transaction.rollback().catch(console.error);
             transaction.clean();
             console.log(transaction);
             return res.status(200).send({ message: "Error al agregar los productos" });
@@ -68,6 +81,10 @@ function saveProducts(req, res) {
     });
 }
 
+/* 
+    URL: /deleteProduct/:id -> id del producto a eliminar
+    INCLUDE - AUTHENTICATION
+*/
 function deleteProduct(req, res) {
     var productId = req.params.id;
     var productImagePath = "";
@@ -83,7 +100,16 @@ function deleteProduct(req, res) {
     });
 
 }
+/* 
+FORM-DATA:
+    *name
+    *description
+    *price
+    *product [image]
 
+    URL: /update-product/:id -> id del producto a editar
+    INCLUDE - AUTHENTICATION
+*/
 function updateProduct(req, res) {
 
     uploadProducts(req, res, function (err) {
@@ -117,7 +143,16 @@ function updateProduct(req, res) {
 
 
 }
+/* 
+FORM-DATA:
+    *name
+    *description
+    *price
+    *product
 
+    URL: /save-product
+    INCLUDE - AUTHETICATION
+*/
 function saveProduct(req, res) {
     uploadProducts(req, res, function (err) {
         if (err) {
@@ -152,19 +187,37 @@ function saveProduct(req, res) {
     });
 }
 
+/* 
 
+    URL: /get-products/:id -> id de un cliente
+    URL: /get-products     -> Todos los productos
+*/
 function getProducts(req, res) {
     var userId = req.params.id;
+    console.log(userId);
 
-    UserProducts.find({ user: userId }).exec((err, result) => {
-        if (err) return res.status(500).send({ message: 'Error al buscar productos' });
+    if (userId) {
+        UserProducts.find({ user: userId }).exec((err, result) => {
+            if (err) return res.status(500).send({ message: 'Error al buscar productos' });
 
-        if (!result) return res.status(404).send({ message: 'No hay productos que mostrar' });
+            if (!result) return res.status(404).send({ message: 'No hay productos que mostrar' });
 
-        return res.status(200).send({
-            products: result
+            return res.status(200).send({
+                products: result
+            });
         });
-    });
+    } else {
+        UserProducts.find().exec((err, result) => {
+            if (err) return res.status(500).send({ message: 'Error al buscar productos' });
+
+            if (!result) return res.status(404).send({ message: 'No hay productos que mostrar' });
+
+            return res.status(200).send({
+                products: result
+            });
+        });
+    }
+
 }
 
 
@@ -176,6 +229,9 @@ function removeFileOfUploads(res, file_path, message) {
     });
 }
 
+/*
+    URL: /get-product-image/:imageFile -> id de la imagen
+*/
 function getImageProduct(req, res) {
     var imageFile = req.params.imageFile;
     var path_file = 'uploads/userProducts/products/' + imageFile;

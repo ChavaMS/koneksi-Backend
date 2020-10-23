@@ -12,6 +12,7 @@ var md_auth = require('../middlewares/authenticate');
 api.get('/pruebas-j', UserJobsController.pruebas);
 api.get('/home-j', UserJobsController.home);
 api.get('/get-user-jobs/:id', UserJobsController.getUserJobs);
+api.get('/get-user-jobs', UserJobsController.getUserJobs);
 
 //RUTAS POST
 api.post('/save-user-jobs', UserJobsController.saveUserJobs);
