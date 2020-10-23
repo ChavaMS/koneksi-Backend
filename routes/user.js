@@ -1,6 +1,5 @@
 'use strict'
-
-
+ 
 //EN USO
 var express = require('express');
 var UserController = require('../controllers/user');
