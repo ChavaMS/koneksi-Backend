@@ -8,6 +8,7 @@ var app = express();
 //Cargar rutas
 var user_routes = require('./routes/user');
 var user_products_routes = require('./routes/userProducts');
+var message_routes = require('./routes/message');
 
 
 //Middlewares
@@ -28,6 +29,7 @@ app.use((req, res, next) => {
 //Rutas
 app.use('/api', user_routes);
 app.use('/api', user_products_routes);
+app.use('/api', message_routes);
 
 
 //Exportar
