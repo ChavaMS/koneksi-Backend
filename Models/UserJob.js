@@ -7,7 +7,6 @@ var Schema = mongoose.Schema;
 var userJobSchema = Schema({
     id: String,
     user: {type: Schema.ObjectId, ref: 'User'},
-    //Cambie type por jobs
     jobs: {type: Schema.ObjectId, ref: 'Jobs'},
     description: String,
     schedule: String,

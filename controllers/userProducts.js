@@ -1,10 +1,11 @@
 'use strict'
 
 var UserProducts = require('../models/UserProducts');
+var User = require('../models/User');
 var uploadProducts = require("../middlewares/storageProducts");
 var userProductsImagePath = "./uploads/userProducts/products/";
 const Transaction = require("mongoose-transactions");
-const transaction = new Transaction();
+
 var fs = require('fs');
 var path = require('path');
 
@@ -25,7 +26,8 @@ FORM-DATA:
     *description
     *price
     *product [image]
-    *user 
+    *user
+    *tags -> ["tag1,tag2", "tag3,tag4"] 
 
     URL: /save-products
 */
@@ -34,12 +36,13 @@ function saveProducts(req, res) {
         if (err) {
             return res.end("Error uploading file 2");
         }
-
+        //Transacción
+        var transaction = new Transaction();
         //DATOS
         var params = req.body;
         var file_name = req.files;
-        //var ids = new Array;
         var error = false;
+        console.log(params);
 
 
         try {
@@ -51,6 +54,9 @@ function saveProducts(req, res) {
                     userProducts.price = params.price[i];
                     userProducts.image = file_name[i].filename;
                     userProducts.user = params.id;
+
+                    userProducts.tags = params.tags[i].split(',');
+
                 } else {
                     error = true;
                 }
@@ -88,16 +94,25 @@ function saveProducts(req, res) {
 function deleteProduct(req, res) {
     var productId = req.params.id;
     var productImagePath = "";
+    var userProductId = 0;
+
+
     UserProducts.findById({ '_id': productId }, (err, product) => {
         productImagePath = product.image;
+        userProductId = product.user;
     });
-    UserProducts.deleteOne({ 'user': req.user.sub, '_id': productId }, (err, result) => {
-        if (err) return res.status(500).send({ message: 'Error al borrar el product' });
 
-        removeFileOfUploads(res, userProductsImagePath + productImagePath, "Imagen borrada correctamente");
+    //Se comrpueba que el que va a borrar el producto, sea el que lo creó
+    if (userProductId == req.user.sub) {
+        UserProducts.deleteOne({ 'user': req.user.sub, '_id': productId }, (err, result) => {
+            if (err) return res.status(500).send({ message: 'Error al borrar el product' });
 
-        return res.status(200).send({ message: 'Producto borrado correctamente' });
-    });
+            removeFileOfUploads(res, userProductsImagePath + productImagePath, "Imagen borrada correctamente");
+
+            return res.status(200).send({ message: 'Producto borrado correctamente' });
+        });
+    }
+
 
 }
 /* 
@@ -194,32 +209,53 @@ function saveProduct(req, res) {
 */
 function getProducts(req, res) {
     var userId = req.params.id;
-    console.log(userId);
 
     if (userId) {
-        UserProducts.find({ user: userId }).exec((err, result) => {
-            if (err) return res.status(500).send({ message: 'Error al buscar productos' });
+        UserProducts.find({ user: userId }, { user: 0 }).exec((err1, products) => {
+            if (err1) return res.status(500).send({ message: 'Error al buscar productos' });
 
-            if (!result) return res.status(404).send({ message: 'No hay productos que mostrar' });
+            if (!products) return res.status(404).send({ message: 'No hay productos que mostrar' });
 
-            return res.status(200).send({
-                products: result
+            User.find({ _id: userId }, { password: 0 }).exec((err2, user) => {
+                if (err2) return res.status(500).send({ message: 'Error al buscar productos' });
+
+                if (!user) return res.status(404).send({ message: 'No hay productos que mostrar' });
+
+                return res.status(200).send({
+                    products,
+                    user
+                });
             });
+
+
         });
     } else {
+        //Todos los productos desordenados
         UserProducts.find().exec((err, result) => {
             if (err) return res.status(500).send({ message: 'Error al buscar productos' });
 
             if (!result) return res.status(404).send({ message: 'No hay productos que mostrar' });
 
+            var productsMix = arrayMix(result);
+
             return res.status(200).send({
-                products: result
+                products: productsMix
             });
         });
     }
 
 }
 
+function arrayMix(arreglo) {
+    for (let i = arreglo.length - 1; i > 0; i--) {
+        let indiceAleatorio = Math.floor(Math.random() * (i + 1));
+        let temporal = arreglo[i];
+        arreglo[i] = arreglo[indiceAleatorio];
+        arreglo[indiceAleatorio] = temporal;
+    }
+
+    return arreglo;
+}
 
 //MANEJO DE ARCHIVOS
 function removeFileOfUploads(res, file_path, message) {
