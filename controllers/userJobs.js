@@ -2,6 +2,7 @@
 
 var UserJobs = require('../models/UserJob');
 const Transaction = require("mongoose-transactions");
+const User = require('../models/User');
 const transaction = new Transaction();
 
 
@@ -41,7 +42,7 @@ function saveUserJobs(req, res) {
                 userJobs.user = params.id;
                 userJobs.schedule = params.schedule[i];
                 //ID de los oficios seleccionados
-                userJobs.type = params.jobId[i];
+                userJobs.jobs = params.jobId[i];
 
             } else {
                 error = true;
@@ -67,17 +68,24 @@ function saveUserJobs(req, res) {
 }
 
 /* 
-    URL: /delete-job/:id -> id del producto
+    URL: /delete-job/:id -> id del oficio
 */
 function deleteUserJob(req, res) {
-    var userJobtId = req.params.id;
-
-    UserJobs.deleteOne({ 'user': req.user.sub, '_id': userJobtId }, (err, result) => {
-        if (err) return res.status(500).send({ message: 'Error al borrar el oficio' });
-
-
-        return res.status(200).send({ message: 'Oficio borrado correctamente' });
+    var userJobId = req.params.id;
+    var userId = 0;
+    UserJobs.find({ '_id': userJobId }).exec((err, job) => {
+        userId = job.user;
     });
+
+    if (userId == userJobId) {
+        UserJobs.deleteOne({ 'user': req.user.sub, '_id': userJobId }, (err, result) => {
+            if (err) return res.status(500).send({ message: 'Error al borrar el oficio' });
+
+
+            return res.status(200).send({ message: 'Oficio borrado correctamente' });
+        });
+    }
+
 }
 
 /* 
@@ -113,30 +121,51 @@ function getUserJobs(req, res) {
 
     var userId = req.params.id;
     if (userId) {
-        UserJobs.find({ user: userId }).populate('jobs user').exec((err, result) => {
+        UserJobs.find({ user: userId }).populate('jobs user').exec((err, userJobs) => {
             if (err) return res.status(200).send({ message: 'Error al buscar oficios' });
 
-            if (!result) return res.status(404).send({ message: 'No hay oficios que mostrar' });
+            if (!userJobs) return res.status(404).send({ message: 'No hay oficios que mostrar' });
 
-            return res.status(200).send({
-                userJobs: result
+            User.find({ _id: userId }, { password: 0 }).exec((err2, user) => {
+                if (err2) return res.status(500).send({ message: 'Error al buscar productos' });
+
+                if (!user) return res.status(404).send({ message: 'No hay productos que mostrar' });
+
+                return res.status(200).send({
+                    userJobs,
+                    user
+                });
             });
+
         });
     } else {
-        UserJobs.find().populate('jobs user').exec((err, result) => {
-            if (err){ 
+        UserJobs.find().populate('jobs').exec((err, result) => {
+            if (err) {
                 console.log(err);
                 return res.status(200).send({ message: 'Error al buscar oficios' });
-                
+
             }
             if (!result) return res.status(404).send({ message: 'No hay oficios que mostrar' });
 
+            var jobsMix = arrayMix(result);
+
             return res.status(200).send({
-                userJobs: result
+                jobsMix
             });
         });
     }
 
+}
+
+function arrayMix(arreglo) {
+    for (let i = arreglo.length - 1; i > 0; i--) {
+        let indiceAleatorio = Math.floor(Math.random() * (i + 1));
+        let temporal = arreglo[i];
+        arreglo[i] = arreglo[indiceAleatorio];
+        arreglo[indiceAleatorio] = temporal;
+    }
+
+    return arreglo;
 }
 
 /* 

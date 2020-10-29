@@ -1,18 +1,18 @@
 'use strict'
 
 var User = require('../models/User');
+var Jobs = require('../models/Jobs');
 var bcrypt = require('bcrypt-nodejs');
 var uploadProfile = require("../middlewares/storageProfile");
 var uploadBanner = require("../middlewares/storageBanner");
-var userProductsController = require("../controllers/userProducts");
-
 
 var userProfilePath = "./uploads/users/profile/";
 var userCoverPath = "./uploads/users/banner/";
 var jwt = require('../services/jwt.js');
 var fs = require('fs');
 var path = require('path');
-//const { type } = require('os');
+var axios = require('axios');
+
 
 //-------PRUEBAS--------
 function home(req, res) {
@@ -26,6 +26,21 @@ function pruebas(req, res) {
 
 //Registro
 //Utiliza: form-data
+/*
+    id: String,
+    name: String,
+    surname: String,
+    email: String,
+    password: String,
+    image: String,
+    cover_page: String,
+    type: String,
+    lat: String,
+    lon: String,
+    last_time_connected: Date,
+    created_at: Date
+
+*/
 function saveUser(req, res) {
     uploadProfile(req, res, function (err) {
         if (err) {
@@ -38,43 +53,67 @@ function saveUser(req, res) {
         var user = new User();
         var file_name = req.file.filename;
 
-        if (params.name && params.surname && params.email && params.password) {
-            user.name = params.name;
-            user.surname = params.surname;
-            user.email = params.email;
-            user.type = params.type;
-            user.image = file_name;
-            user.cover_page = null;
 
-            User.find({
-                email: user.email.toLowerCase()
-            }).exec((err, users) => {
-                if (err) {
-                    return removeFileOfUploads(res, userProfilePath + file_name, "Error en la petición de usuarios");
+        if (params.name && params.surname && params.email && params.password &&
+            (params.suburb || params.cp || params.street)
+            && params.state && params.city) {
+
+            //Datos que se piden para la ubicación
+            var location = params.cp + ' ' + params.street + ' ' + params.suburb + ',' + params.city + ' ' + params.state + ' Mexico';
+            axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
+                params: {
+                    address: location,
+                    key: 'AIzaSyDgRN1AR5CnGjgdcc3f93CzMho80a2yWog'
                 }
+            }).then(function (resp) {
 
-                if (users && users.length >= 1) {
-                    return removeFileOfUploads(res, userProfilePath + file_name, "El usuario ya esta registrado");
-                } else {
-                    //Cifra la password y me guarda los datos
-                    bcrypt.hash(params.password, null, null, (err, hash) => {
-                        user.password = hash;
+                user.name = params.name;
+                user.surname = params.surname;
+                user.email = params.email;
 
-                        user.save((err, userStored) => {
-                            if (err) {
-                                return removeFileOfUploads(res, userProfilePath + file_name, "Error al guardar el usuario");
-                            }
-                            if (userStored) {
-                                res.status(200).send({ user: userStored });
-                            } else {
-                                return removeFileOfUploads(res, userProfilePath + file_name, "No se ha registrado el usuario");
-                            }
+                user.image = file_name;
+                user.cover_page = null;
+
+                user.type = params.type;
+                user.lat = resp.data.results[0].geometry.location.lat;
+                user.lon = resp.data.results[0].geometry.location.lng;
+
+                user.created_at = Date.now();
+                user.last_time_connected = Date.now();
+
+                User.find({
+                    email: user.email.toLowerCase()
+                }).exec((err, users) => {
+                    if (err) {
+                        return removeFileOfUploads(res, userProfilePath + file_name, "Error en la petición de usuarios");
+                    }
+
+                    if (users && users.length >= 1) {
+                        return removeFileOfUploads(res, userProfilePath + file_name, "El usuario ya esta registrado");
+                    } else {
+                        //Cifra la password y me guarda los datos
+                        bcrypt.hash(params.password, null, null, (err, hash) => {
+                            user.password = hash;
+
+                            user.save((err, userStored) => {
+                                if (err) {
+                                    return removeFileOfUploads(res, userProfilePath + file_name, "Error al guardar el usuario");
+                                }
+                                if (userStored) {
+                                    res.status(200).send({ user: userStored });
+                                } else {
+                                    return removeFileOfUploads(res, userProfilePath + file_name, "No se ha registrado el usuario");
+                                }
+                            });
                         });
-                    });
-                }
+                    }
+                });
+
+            }).catch(function (error) {
+                return removeFileOfUploads(res, userProfilePath + file_name, "Error al procesar la ubicacion");
             });
         } else {
-            return removeFileOfUploads(res, userProfilePath + file_name, "Envia todos los campos necesarios")
+            return removeFileOfUploads(res, userProfilePath + file_name, "Envia todos los campos necesarios");
         }
     });
 
@@ -93,16 +132,33 @@ function loginUser(req, res) {
             if (user) {
                 bcrypt.compare(password, user.password, (err, check) => {
                     if (check) {
+                        var userId = user._id;
+                        
                         //Devolver datos de usuario
                         if (params.gettoken) {
-                            //generar y devolver token 
-                            return res.status(200).send({
-                                token: jwt.createToken(user)
+                            //Actualizamos la ultima vez que se conectó el usuario
+                            User.findByIdAndUpdate(userId, { last_time_connected: Date.now() }, { new: true }, (err, userUpdated) => {
+                                if (err) return res.status(500).send({ message: 'Error en la petición' });
+
+                                if (!userUpdated) return res.status(404).send({ message: 'No se ha podido iniciar sesion' });
+
+                                //generar y devolver token 
+                                return res.status(200).send({
+                                    token: jwt.createToken(user)
+                                });
                             });
+
                         } else {
-                            //Devolver datos en claro
-                            user.password = undefined;
-                            return res.status(200).send({ user });
+                            //Actualizamos la ultima vez que se conectó el usuario
+                            User.findByIdAndUpdate(userId, { last_time_connected: Date.now() }, { new: true }, (err, userUpdated) => {
+                                if (err) return res.status(500).send({ message: 'Error en la petición' });
+
+                                if (!userUpdated) return res.status(404).send({ message: 'No se ha podido iniciar sesion' });
+
+                                //Devolver datos en claro
+                                user.password = undefined;
+                                return res.status(200).send({ user });
+                            });
                         }
 
                     } else {
@@ -117,12 +173,13 @@ function loginUser(req, res) {
 
 }
 
+
 //Edicion de datos de usuario
 function updateUser(req, res) {
     var userId = req.params.id;
     var update = req.body;
     console.log(req.params);
-    
+
     //Borrar propiedad password
     delete update.password;
     if (userId != req.user.sub) {
