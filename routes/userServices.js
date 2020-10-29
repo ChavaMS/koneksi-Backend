@@ -7,7 +7,7 @@ var UserServicesController = require('../controllers/userServices');
 var api = express.Router();
 
 api.put('/updateUserServices/:id', UserServicesController.updateUserServices);
-
+api.get('/userServices', UserServicesController.getUserservices);
 api.post('/saveUserServices', UserServicesController.saveUserServices);
 
 module.exports = api;

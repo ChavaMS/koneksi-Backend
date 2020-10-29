@@ -48,8 +48,16 @@ function updateUserServices (req, res) {
     })
 }
 
+function getUserservices (req, res){
+    UserServices.find({}).exec((err, userServices) => {
+        if (err) return res.status(500).send("Error al devolver los datos");
+        if (!userServices) return res.status(404).send("No hay servicios a mostrar")
+        return res.status(200).send({userServices});
+    })
+}
+
 module.exports = {
     saveUserServices,
     updateUserServices,
-
+    getUserservices
 }
