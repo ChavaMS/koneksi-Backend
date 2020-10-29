@@ -196,7 +196,6 @@ function getImageProfile(req, res) {
     });
 }
 
-
 function getImageCover(req, res) {
     var imageFile = req.params.imageFile;
     var path_file = 'uploads/users/banner/' + imageFile;
