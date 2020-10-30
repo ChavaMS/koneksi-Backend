@@ -1,7 +1,7 @@
 'use strict'
 
 const UserServices = require('../models/UserServices');
-var uploadServices = require("../middlewares/--------"); // Para imágenes
+var uploadServices = require("../middlewares/storageServices"); // Para imágenes
 
 var fs = require('fs');
 var path = require('path');
@@ -30,8 +30,6 @@ function saveUserServices(req, res){
         if (!userServicesStored) return res.status(404).send("No se encontró el objeto de userService");
 
         return res.status(200).send({userServices: userServicesStored});
-
-
     })
 }
 
@@ -39,17 +37,27 @@ function updateUserServices (req, res) {
     var userServicesId = req.params.id;
     var update = req.body;
 
+    if (userId != req.user.sub) 
+        return res.status(200).send({ message: 'No tienes permiso para actualizar los datos del usuario' });
+
     UserServices.findByIdAndUpdate(userServicesId, update, (err, userServicesUpdated) => {
         if (err) return res.status(500).send("Error al actualizar");
         if (!userServicesUpdated) return res.status(404).send("No existe el userService a actulizar");
 
         return res.status(200).send({userServices: userServicesUpdated});
     })
+}
 
+function getUserservices (req, res){
+    UserServices.find({}).exec((err, userServices) => {
+        if (err) return res.status(500).send("Error al devolver los datos");
+        if (!userServices) return res.status(404).send("No hay servicios a mostrar")
+        return res.status(200).send({userServices});
+    })
 }
 
 module.exports = {
     saveUserServices,
     updateUserServices,
-
+    getUserservices
 }

@@ -20,5 +20,4 @@ api.post('/login', UserController.loginUser);
 api.post('/saveUser', UserController.saveUser);
 api.post('/updateCoverPage', UserController.updateCoverPage);
 
-
 module.exports = api;
