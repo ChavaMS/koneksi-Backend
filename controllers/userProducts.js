@@ -155,8 +155,6 @@ function updateProduct(req, res) {
             });
         });
     });
-
-
 }
 /* 
 FORM-DATA:
@@ -190,8 +188,8 @@ function saveProduct(req, res) {
             if (err) {
                 removeFileOfUploads(res, userProductsImagePath + file_name, "Error al guardar el producto");
                 return res.status(200).send({ message: 'Error al guardar el producto' });
-
             }
+            
             if (productStored) {
                 res.status(200).send({ user: productStored });
             } else {
@@ -203,7 +201,6 @@ function saveProduct(req, res) {
 }
 
 /* 
-
     URL: /get-products/:id -> id de un cliente
     URL: /get-products     -> Todos los productos
 */
@@ -279,7 +276,6 @@ function getImageProduct(req, res) {
         }
     });
 }
-
 
 module.exports = {
     home,

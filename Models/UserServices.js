@@ -9,7 +9,7 @@ var UserServicesSchema = Schema({
     user: {type: Schema.ObjectId, ref: 'User'},
     description: String,
     schedule: String,
-    images: String,
+    images: [String],
     tags: String
 });
 
