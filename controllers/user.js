@@ -67,17 +67,24 @@ function saveUser(req, res) {
                 }
             }).then(function (resp) {
 
+                //DATOS BASICOS
                 user.name = params.name;
                 user.surname = params.surname;
                 user.email = params.email;
+                user.type = params.type;
 
+                //IMAGENES
                 user.image = file_name;
                 user.cover_page = null;
 
-                user.type = params.type;
+                //UBICACION
                 user.lat = resp.data.results[0].geometry.location.lat;
                 user.lon = resp.data.results[0].geometry.location.lng;
+                user.country = params.country;
+                user.state = params.state;
+                user.city = params.city;
 
+                //FECHA
                 user.created_at = Date.now();
                 user.last_time_connected = Date.now();
 

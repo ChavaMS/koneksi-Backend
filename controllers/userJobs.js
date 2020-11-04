@@ -3,7 +3,7 @@
 var UserJobs = require('../models/UserJob');
 const Transaction = require("mongoose-transactions");
 const User = require('../models/User');
-const transaction = new Transaction();
+
 
 
 
@@ -21,8 +21,8 @@ function pruebas(req, res) {
 x-www-form-utlencoded:
     *description
     *schedule
-    *type -> JobId
-    *user
+    *jobId -> id de la tabla de oficios
+    *user -> id del usuario al que le pertenecen los oficios
 
     URL: /save-user-jobs
 */
@@ -31,24 +31,47 @@ function saveUserJobs(req, res) {
     var params = req.body;
     var error = false;
 
+    var transaction = new Transaction();
+    var userJobs = new UserJobs();
 
     try {
-        for (let i = 0; i < params.description.length; i++) {
-            let userJobs = new UserJobs();
-            if (params.description[i] && params.schedule[i] && params.jobId[i] && params.id) {
+        if (!Array.isArray(params.description)) {
 
-                userJobs.description = params.description[i];
-                //ID del usuario
-                userJobs.user = params.id;
-                userJobs.schedule = params.schedule[i];
-                //ID de los oficios seleccionados
-                userJobs.jobs = params.jobId[i];
+            userJobs.description = params.description;
+            //ID del usuario
+            userJobs.user = params.id;
+            userJobs.schedule = params.schedule;
+            //ID de los oficios seleccionados
+            userJobs.jobs = params.jobId;
 
-            } else {
-                error = true;
-            }
+            //Se representa como ["tag1,tag2", "tag1,tag2"] 
+            userJobs.tags = params.tags.split(',');
+            
             transaction.insert('UserJob', userJobs);
+
+        } else {
+            for (let i = 0; i < params.description.length; i++) {
+                userJobs = new UserJobs();
+                if (params.description[i] && params.schedule[i] && params.jobId[i] && params.id) {
+
+                    userJobs.description = params.description[i];
+                    //ID del usuario
+                    userJobs.user = params.id;
+                    userJobs.schedule = params.schedule[i];
+                    //ID de los oficios seleccionados
+                    userJobs.jobs = params.jobId[i];
+
+                    //Se representa como ["tag1,tag2", "tag1,tag2"] 
+                    userJobs.tags = params.tags[i].split(',');
+
+                    transaction.insert('UserJob', userJobs);
+                } else {
+                    error = true;
+                }
+            }
         }
+        
+
         if (!error) {
             transaction.run();
             return res.status(200).send({ message: "Oficios agregados con éxito" });

@@ -26,8 +26,8 @@ FORM-DATA:
     *description
     *price
     *product [image]
-    *user
-    *tags -> ["tag1,tag2", "tag3,tag4"] 
+    *id -> id del user 
+    *tags -> ["tag1,tag2"] 
 
     URL: /save-products
 */
@@ -38,30 +38,53 @@ function saveProducts(req, res) {
         }
         //Transacción
         var transaction = new Transaction();
-        //DATOS
+        //Modelo
+        var userProducts = new UserProducts();
+        //Datos
         var params = req.body;
         var file_name = req.files;
         var error = false;
-        console.log(params);
 
 
         try {
-            for (let i = 0; i < params.name.length; i++) {
-                let userProducts = new UserProducts();
-                if (params.name[i] && params.description[i] && params.price[i] && file_name[i].filename && params.id) {
-                    userProducts.name = params.name[i];
-                    userProducts.description = params.description[i];
-                    userProducts.price = params.price[i];
-                    userProducts.image = file_name[i].filename;
-                    userProducts.user = params.id;
 
-                    userProducts.tags = params.tags[i].split(',');
+            if (!Array.isArray(params.description)) {
+                userProducts.name = params.name;
+                userProducts.original_name = params.name;
+                userProducts.description = params.description;
+                userProducts.price = params.price;
+                userProducts.image = file_name.filename;
+                userProducts.user = params.id;
 
-                } else {
-                    error = true;
-                }
+                //Se representa como ["tag1,tag2", "tag1,tag2"] 
+                userProducts.tags = params.tags.split(',');
+
                 transaction.insert('UserProducts', userProducts);
+            } else {
+                for (let i = 0; i < params.name.length; i++) {
+                    userProducts = new UserProducts();
+                    if (params.name[i] && params.description[i] && params.price[i] && file_name[i].filename && params.id) {
+
+                        userProducts.name = params.name[i].toLowerCase();
+                        userProducts.original_name = params.name[i];
+                        userProducts.description = params.description[i];
+                        userProducts.price = params.price[i];
+                        userProducts.image = file_name[i].filename;
+                        userProducts.user = params.id;
+
+                        //Se representa como ["tag1,tag2", "tag1,tag2"] 
+                        userProducts.tags = params.tags[i].split(',');
+
+                        transaction.insert('UserProducts', userProducts);
+
+                    } else {
+                        error = true;
+                    }
+                }
             }
+
+            
+
             if (!error) {
                 transaction.run();
                 return res.status(200).send({ message: "Productos agregados con éxito" });
@@ -178,7 +201,8 @@ function saveProduct(req, res) {
 
         let userProducts = new UserProducts();
 
-        userProducts.name = params.name;
+        userProducts.name = params.name.toLowerCase();
+        userProducts.original_name = params.name;
         userProducts.description = params.description;
         userProducts.price = params.price;
         userProducts.image = file_name.filename;
