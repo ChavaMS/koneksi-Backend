@@ -18,7 +18,7 @@ function pruebas(req, res) {
 //---------------------
 
 /* 
-x-www-form-utlencoded:
+x-www-form-urlencoded:
     *description
     *schedule
     *jobId -> id de la tabla de oficios
@@ -31,8 +31,12 @@ function saveUserJobs(req, res) {
     var params = req.body;
     var error = false;
 
+<<<<<<< Updated upstream
     var transaction = new Transaction();
     var userJobs = new UserJobs();
+=======
+    console.log(params);
+>>>>>>> Stashed changes
 
     try {
         if (!Array.isArray(params.description)) {
@@ -88,6 +92,7 @@ function saveUserJobs(req, res) {
         console.log(transaction);
         return res.status(200).send({ message: "Error al agregar los oficios" });
     }
+
 }
 
 /* 
