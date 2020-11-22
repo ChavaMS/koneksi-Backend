@@ -120,5 +120,5 @@ module.exports = {
     updateUserServices,
     getUserservices,
     deleteUserServices,
-    getImage
+    //getImage
 }

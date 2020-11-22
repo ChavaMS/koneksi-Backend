@@ -13,7 +13,6 @@ var UserProductsSchema = Schema({
     price: Number,
     description: String,
     tags: [String]
-    // tags: Array[String]
 });
 
 module.exports = mongoose.model('UserProducts', UserProductsSchema);

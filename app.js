@@ -13,6 +13,7 @@ var interaction_rotues = require('./routes/interaction');
 var favorite_routes = require('./routes/favorites');
 var user_jobs_routes = require('./routes/userJobs');
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 <<<<<<< HEAD
 >>>>>>> 021dde2f791fd04d908b1d5cd88e061806078596
 =======
@@ -22,6 +23,9 @@ var user_jobs_routes = require('./routes/userJobs');
 var user_services_routes = require('./routes/userServices');
 var search_routes = require('./routes/search');
 >>>>>>> 53b863d650e770dd8692625088dd98d453af0af5
+=======
+var search_routes = require('./routes/search');
+>>>>>>> Stashed changes
 
 //Middlewares
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -46,10 +50,14 @@ app.use('/api', interaction_rotues);
 app.use('/api', favorite_routes)
 app.use('/api', user_jobs_routes);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 <<<<<<< HEAD
 >>>>>>> 021dde2f791fd04d908b1d5cd88e061806078596
 =======
 
+>>>>>>> Stashed changes
+=======
+app.use('/api', search_routes);
 >>>>>>> Stashed changes
 
 =======

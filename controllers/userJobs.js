@@ -32,10 +32,15 @@ function saveUserJobs(req, res) {
     var error = false;
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     var transaction = new Transaction();
     var userJobs = new UserJobs();
 =======
     console.log(params);
+>>>>>>> Stashed changes
+=======
+    var transaction = new Transaction();
+    var userJobs = new UserJobs();
 >>>>>>> Stashed changes
 
     try {
