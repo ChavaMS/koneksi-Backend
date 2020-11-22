@@ -31,17 +31,13 @@ function saveUserJobs(req, res) {
     var params = req.body;
     var error = false;
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+
     var transaction = new Transaction();
     var userJobs = new UserJobs();
-=======
     console.log(params);
->>>>>>> Stashed changes
-=======
     var transaction = new Transaction();
     var userJobs = new UserJobs();
->>>>>>> Stashed changes
+
 
     try {
         if (!Array.isArray(params.description)) {

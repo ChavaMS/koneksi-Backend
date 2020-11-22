@@ -1,8 +1,8 @@
 'use strict'
 
-var Favorite = require('../Models/Favorites');
+var Favorite = require('../models/Favorites');
 var UserJobs = require('../models/UserJob');
-var UserServices = require('../Models/UserServices');
+var UserServices = require('../models/UserServices');
 
 function probando(req, res){
     res.status(200).send({message: 'Probando'});

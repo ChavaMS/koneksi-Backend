@@ -1,6 +1,5 @@
 'use strict'
-
-const UserServices = require('../models/UserServices');
+var UserServices = require('../models/UserServices');
 var uploadServices = require("../middlewares/storageServices"); // Para imágenes
 
 var fs = require('fs');
