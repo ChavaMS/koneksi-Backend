@@ -31,6 +31,7 @@ function saveUserJobs(req, res) {
     var params = req.body;
     var error = false;
 
+    console.log(params);
 
     var transaction = new Transaction();
     var userJobs = new UserJobs();
