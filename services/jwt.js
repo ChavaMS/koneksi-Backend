@@ -14,6 +14,9 @@ exports.createToken = function(user){
         image: user.image,
         lat: user.lat,
         lon: user.lon,
+        country: user.country,
+        state: user.state,
+        city: user.city,
         created_at: user.created_at,
         iat: moment().unix(),
         exp: moment().add(30, 'days').unix()

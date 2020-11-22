@@ -12,6 +12,12 @@ User{
    "created_at": Date
 }
 
+socialMedia{
+   "User": User,
+   "social_media" : String
+}
+
+
 
 UserJob{
    "_id": String,

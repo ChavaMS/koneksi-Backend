@@ -12,8 +12,13 @@ var user_products_routes = require('./routes/userProducts');
 var message_routes = require('./routes/message');
 =======
 var user_jobs_routes = require('./routes/userJobs');
+<<<<<<< HEAD
 >>>>>>> 021dde2f791fd04d908b1d5cd88e061806078596
 
+=======
+var user_services_routes = require('./routes/userServices');
+var search_routes = require('./routes/search');
+>>>>>>> 53b863d650e770dd8692625088dd98d453af0af5
 
 //Middlewares
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -29,7 +34,6 @@ app.use((req, res, next) => {
     next();
 });
 
-
 //Rutas
 app.use('/api', user_routes);
 app.use('/api', user_products_routes);
@@ -37,8 +41,13 @@ app.use('/api', user_products_routes);
 app.use('/api', message_routes);
 =======
 app.use('/api', user_jobs_routes);
+<<<<<<< HEAD
 >>>>>>> 021dde2f791fd04d908b1d5cd88e061806078596
 
+=======
+app.use('/api', user_services_routes) 
+app.use('/api', search_routes);
+>>>>>>> 53b863d650e770dd8692625088dd98d453af0af5
 
 //Exportar
 module.exports = app;

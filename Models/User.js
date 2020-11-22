@@ -4,6 +4,10 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
+/*
+ **Se guardan las coordenadas para evitar hacer calculos cada vez que se quiera la 
+ **ubicacion.
+*/
 var UserSchema = Schema({
     id: String,
     name: String,
@@ -15,6 +19,9 @@ var UserSchema = Schema({
     type: String,
     lat: String,
     lon: String,
+    country: String,
+    state: String,
+    city: String,
     last_time_connected: Date,
     created_at: Date
 });
