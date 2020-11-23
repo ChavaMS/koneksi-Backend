@@ -33,8 +33,11 @@ function getFavorite(req, res){
         listsIDs.forEach(ID => {
             UserJobs.find({_id:ID}).exec((err, result) => {
                 if(err) return res.status(500).send({message: 'Error en la petición'});
-                console.log(result.user);
-                listaUserJob.push(result);
+                
+                if(result[0]){
+                    console.log(result[0].user);
+                    listaUserJob.push(result[0]);
+                }
             });
         });
         console.log(listaUserJob);

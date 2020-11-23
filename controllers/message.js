@@ -42,12 +42,10 @@ function saveMessage(req, res){
 function getReceivedMessages(req, res){
     var userId = req.user.sub;
 
-
     var page = 1;
     if(req.params.page){
         page = req.params.page;
     }
-
     var itemsPerPage = 4;
 
     Message.find({receiver: userId}).populate('emitter').paginate(page, itemsPerPage, (err, messages, total) => {
