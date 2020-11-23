@@ -8,6 +8,7 @@ var CommentsSchema = Schema({
     id: String,
     emitter: {type: Schema.ObjectId, ref: 'User'},
     receiver: {type: Schema.ObjectId, ref: 'User'},
+    activity_id: String,
     created_at: Date,
     text: String
 });

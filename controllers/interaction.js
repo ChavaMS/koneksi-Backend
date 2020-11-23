@@ -1,7 +1,7 @@
 'use strict'
 
-var Comment = require('../Models/Comments');  
-var Rating = require('../Models/Rating');  
+var Comment = require('../models/Comments');  
+var Rating = require('../models/Rating');  
 
 function probando(req, res){
     res.status(200).send({message: 'Probando'});
@@ -16,6 +16,7 @@ function saveComment(req, res){
     comment.emitter = req.user.sub; //usuario loggeado. La propiedad sub es el id.
     comment.receiver = params.receiver; //req.body.receiver
     comment.text = params.text;
+    comment.activity_id = params.activity_id;
     comment.created_at = Date.now();
     
     comment.save((err, commentStored) => {
