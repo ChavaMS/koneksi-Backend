@@ -69,12 +69,40 @@ function getComments(req, res) {
     });
 }
 
+//Verificar que solo se pueda dejar un rating por persona
 function saveRating(req, res) {
+    var rate = new Rating();
+    rate.user = req.user.sub;
+    rate.userSaved = req.body.userSaved;
+    rate.rating = req.body.rating;
+
+    rate.save((err, ratingtStored) => {
+        if (err) return res.status(500).send({ message: 'Error en la petición' });
+        if (!ratingtStored) return res.status(500).send({ message: 'Error al guardar tu calificación' });
+
+        return res.status(200).send({ message: "Calificación guardada" });
+    });
 
 }
 
 function getRating(req, res) {
+    var userSav = req.body.userSaved;
+    
+    Rating.find({})
+    Rating.find({userSaved:userSav}).exec((err, valor) => {
+        if (err) return res.status(500).send({ message: "Error al borrar el comentario"});
 
+        var promedio = 0;
+        var tamano = 0;
+        valor.forEach(num => {
+            promedio += num.rating;
+            tamano += 1;
+        });
+
+        promedio /= tamano;
+
+        return res.status(200).send({ message: promedio.toString() });
+    });
 }
 
 module.exports = {
