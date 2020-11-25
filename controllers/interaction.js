@@ -57,7 +57,7 @@ function getComments(req, res) {
     }
     var itemsPerPage = 4;
 
-    Comment.find({receiver: userId, activity_id: actId}).paginate(page, itemsPerPage, (err, comment, total) => {
+    Comment.find({receiver: userId, activity_id: actId}).populate('emitter','name surname image').paginate(page, itemsPerPage, (err, comment, total) => {
         if(err) return res.status(500).send({message: 'Error en la petición'});
         if(!comment) return res.status(404).send({message: 'No hay mensajes'});
 

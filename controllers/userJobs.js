@@ -151,7 +151,7 @@ function getUserJobs(req, res) {
 
     var userId = req.params.id;
     if (userId) {
-        UserJobs.find({ user: userId }).populate('jobs user').exec((err, userJobs) => {
+        UserJobs.find({ user: userId }).populate('jobs').exec((err, userJobs) => {
             if (err) return res.status(200).send({ message: 'Error al buscar oficios' });
 
             if (!userJobs) return res.status(404).send({ message: 'No hay oficios que mostrar' });
