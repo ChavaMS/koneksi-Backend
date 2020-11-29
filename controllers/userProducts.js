@@ -79,11 +79,12 @@ function saveProducts(req, res) {
 
                     } else {
                         error = true;
+
                     }
                 }
             }
 
-            
+
 
             if (!error) {
                 transaction.run();
@@ -213,7 +214,7 @@ function saveProduct(req, res) {
                 removeFileOfUploads(res, userProductsImagePath + file_name, "Error al guardar el producto");
                 return res.status(200).send({ message: 'Error al guardar el producto' });
             }
-            
+
             if (productStored) {
                 res.status(200).send({ user: productStored });
             } else {
@@ -228,10 +229,11 @@ function saveProduct(req, res) {
     URL: /get-products/:id -> id de un cliente
     URL: /get-products     -> Todos los productos
 */
-function getProducts(req, res) {
+async function getProducts(req, res) {
     var userId = req.params.id;
 
-    if (userId) {
+    if (userId && userId != 0) {
+        console.log('entró');
         UserProducts.find({ user: userId }, { user: 0 }).exec((err1, products) => {
             if (err1) return res.status(500).send({ message: 'Error al buscar productos' });
 
@@ -251,19 +253,72 @@ function getProducts(req, res) {
 
         });
     } else {
-        //Todos los productos desordenados
-        UserProducts.find().exec((err, result) => {
-            if (err) return res.status(500).send({ message: 'Error al buscar productos' });
+        var page = 1;
+        if (req.params.page) {
+            page = req.params.page;
+        }
+        var itemsPerPage = 5;
 
-            if (!result) return res.status(404).send({ message: 'No hay productos que mostrar' });
+        var userProductsArray = new Array();
+        //Retorna el id de los usuarios con productos
+        var myAggregate = UserProducts.aggregate([{ $group: { _id: "$user" } }]);
 
-            var productsMix = arrayMix(result);
+        const options = {
+            page: page,
+            limit: itemsPerPage
+        };
+
+        //Pagina lo anterior
+        UserProducts.aggregatePaginate(myAggregate, options).then(async function (results) {
+
+            //console.log(results.docs);
+            //retorna los productos por usuario y su usuario
+            for (let i = 0; i < results.docs.length; i++) {
+                await getUser(results.docs[i]).then((value) => {
+                    userProductsArray[i] = value;
+
+                    //console.log(userProductsArray);
+                });
+    
+            }
 
             return res.status(200).send({
-                products: productsMix
+                userProductsArray,
+                total: results.totalPages
             });
+
+        }).catch(function (err) {
+            if(err){
+                return res.status(500).send({message: 'Error en la petición'});
+
+            }
         });
+        //Todos los productos desordenados
+
     }
+
+}
+
+async function getUser(id) {
+    var usuario = await User.find({ _id: id }, { password: 0 }).exec().then((result) => {
+        return result[0];
+
+    }).catch((err) => {
+        return handleError(err);
+    });
+
+
+    var productos = await UserProducts.find({ user: id }).limit(3).exec().then((result) => {
+        return result;
+    }).catch((err) => {
+        return handleError(err);
+    });
+
+    return {
+        'user': usuario,
+        'productos': productos
+    };
+
 
 }
 

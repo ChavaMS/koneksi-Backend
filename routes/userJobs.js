@@ -14,8 +14,8 @@ api.get('/home-j', UserJobsController.home);
 
 
 //RUTAS POST
-api.post('/get-user-jobs/:id', UserJobsController.getUserJobs);
-api.post('/get-user-jobs', UserJobsController.getUserJobs);
+api.post('/get-user-jobs/:id?/:page?', UserJobsController.getUserJobs);
+//api.post('/get-user-jobs', UserJobsController.getUserJobs);
 api.post('/save-user-jobs', UserJobsController.saveUserJobs);
 api.post('/save-user-job',md_auth.ensureAuth, UserJobsController.saveUserJob);
 

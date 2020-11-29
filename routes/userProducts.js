@@ -15,8 +15,8 @@ api.get('/get-product-image/:imageFile', UserProductsController.getImageProduct)
 //RUTAS POST
 api.post('/save-products', UserProductsController.saveProducts);
 api.post('/save-product', md_auth.ensureAuth, UserProductsController.saveProduct);
-api.post('/get-products/:id', UserProductsController.getProducts);
-api.post('/get-products', UserProductsController.getProducts);
+api.post('/get-products/:id?/:page?', UserProductsController.getProducts);
+//api.post('/get-products', UserProductsController.getProducts);
 
 //RUTAS PUT
 api.put('/update-product/:id', md_auth.ensureAuth, UserProductsController.updateProduct);

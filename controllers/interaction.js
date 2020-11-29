@@ -2,6 +2,8 @@
 var mongoosePaginate = require('mongoose-pagination');
 var Comment = require('../models/Comments');
 var Rating = require('../models/Rating');
+var axios = require('axios');
+
 
 function probando(req, res) {
     res.status(200).send({ message: 'Probando' });
@@ -52,18 +54,18 @@ function getComments(req, res) {
     var actId = req.body.activity_id;
 
     var page = 1;
-    if(req.params.page){
+    if (req.params.page) {
         page = req.params.page;
     }
     var itemsPerPage = 4;
 
-    Comment.find({receiver: userId, activity_id: actId}).populate('emitter','name surname image').paginate(page, itemsPerPage, (err, comment, total) => {
-        if(err) return res.status(500).send({message: 'Error en la petición'});
-        if(!comment) return res.status(404).send({message: 'No hay mensajes'});
+    Comment.find({ receiver: userId, activity_id: actId }).populate('emitter', 'name surname image').paginate(page, itemsPerPage, (err, comment, total) => {
+        if (err) return res.status(500).send({ message: 'Error en la petición' });
+        if (!comment) return res.status(404).send({ message: 'No hay mensajes' });
 
         return res.status(200).send({
             total: total,
-            pages: Math.ceil(total/itemsPerPage),
+            pages: Math.ceil(total / itemsPerPage),
             comment
         });
     });
@@ -86,22 +88,50 @@ function saveRating(req, res) {
 }
 
 function getRating(req, res) {
-    var userSav = req.body.userSaved;
-    
-    Rating.find({})
-    Rating.find({userSaved:userSav}).exec((err, valor) => {
-        if (err) return res.status(500).send({ message: "Error al borrar el comentario"});
+    var userSav = req.params.userSaved;
 
-        var promedio = 0;
-        var tamano = 0;
-        valor.forEach(num => {
-            promedio += num.rating;
-            tamano += 1;
+    Rating.find({ userSaved: userSav }).exec((err, valor) => {
+        if (err) return res.status(500).send({ message: "Error al borrar el comentario" });
+        let promedio = 0;
+        let tamano = 0;
+        if (valor.length == 0) {
+            promedio = 0;
+        } else {
+
+            valor.forEach(num => {
+                promedio += num.rating;
+                tamano += 1;
+            });
+
+            promedio /= tamano;
+        }
+
+
+        return res.status(200).send({ promedio: Math.round(promedio) });
+    });
+}
+
+function getDistance(req, res){
+    var origin = req.body.latFrom + ',' + req.body.lonFrom;
+    var destination = req.body.latTo + ',' + req.body.lonTo;
+
+    axios.get('https://maps.googleapis.com/maps/api/distancematrix/json', {
+        params: {
+            units: 'km',
+            origins: origin,
+            destinations: destination,
+            key: 'AIzaSyDgRN1AR5CnGjgdcc3f93CzMho80a2yWog'
+        }
+    }).then(function (resp) {
+        return res.status(200).send({
+            distanceText: resp.data.rows[0].elements[0].distance.text,
+            distanceValue: resp.data.rows[0].elements[0].distance.value
         });
 
-        promedio /= tamano;
-
-        return res.status(200).send({ message: promedio.toString() });
+        /* console.log(resp.data.rows[0].elements[0].distance.text);
+        console.log(resp.data.rows[0].elements[0].distance.value); */
+    }).catch(err => {
+        console.log(err);
     });
 }
 
@@ -112,5 +142,6 @@ module.exports = {
     updateComment,
     getComments,
     saveRating,
-    getRating
+    getRating,
+    getDistance
 };

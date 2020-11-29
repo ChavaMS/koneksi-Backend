@@ -198,6 +198,118 @@ async function search(req, res) {
     });
 }
 
+function searchProducts(req, res) {
+    var params = req.body;
+
+    var country;
+    var state;
+    var city;
+    if (params.country && params.state && params.city) {
+        country = params.country;
+        state = params.state;
+        city = params.city;
+    } else if (req.user) {
+
+        country = req.user.country;
+        state = req.user.state;
+        city = req.user.city;
+    } else {
+        country = '';
+        state = '';
+        city = '';
+    }
+    /* else {
+    var geo = geoip.lookup(req.ip);
+
+    country = geo.country;
+    state = geo.region;
+    city = geo.city;
+} */
+
+    var itemSearch = params.item.toLowerCase();
+    var page = 1;
+    if (req.params.page) {
+        page = req.params.page;
+    }
+    var itemsPerPage = 5;
+
+    var userProductsArray = new Array();
+    var skip = ( page - 1 ) * itemsPerPage;
+
+    //var myAggregate = 
+    UserProducts.aggregate([{ $match: { $or: [{ name: { '$regex': itemSearch } }, { tags: { '$regex': itemSearch } }] } }, { $group: { _id: '$user' } }, { $skip: skip}, { $limit: itemsPerPage }]).exec().then(async function (results) {
+                //retorna usuarios y sus productos
+                for (let i = 0; i < results.docs.length; i++) {
+                    await getUser(results.docs[i], itemSearch).then((value) => {
+                        
+                        //if ( (value.user.country != '' ) && !(value.user.country != country || value.user.state != state || value.user.city != city) ){
+                            userProductsArray[i] = value;
+                        //}
+                    });
+        
+                }
+                //console.log(userProductsArray);
+                return res.status(200).send({ userProductsArray });
+    }).catch(err =>{
+        if(err){
+            return res.status(500).send({ message: 'Error en la petición' });
+        }
+    });
+    /* const options = {
+        page: page,
+        limit: itemsPerPage
+    };
+
+    //Pagina lo anterior
+    UserProducts.aggregatePaginate(myAggregate, options).then(async function (results) {
+
+        //retorna usuarios y sus productos
+        for (let i = 0; i < results.docs.length; i++) {
+            await getUser(results.docs[i], itemSearch).then((value) => {
+                
+                //if ( (value.user.country != '' ) && !(value.user.country != country || value.user.state != state || value.user.city != city) ){
+                    userProductsArray[i] = value;
+                //}
+            });
+
+        }
+        //console.log(userProductsArray);
+        return res.status(200).send({ userProductsArray });
+
+    }).catch(function (err) {
+        if (err) {
+            //console.log(err);
+            return res.status(500).send({ message: 'Error en la petición' });
+
+        }
+    }); */
+
+}
+
+async function getUser(id, itemSearch) {
+    var usuario = await User.find({ _id: id }, { password: 0 }).exec().then((result) => {
+        return result[0];
+
+    }).catch((err) => {
+        return handleError(err);
+    });
+
+
+    var productos = await UserProducts.find({ $and: [{ user: id }, { $or: [{ name: { '$regex': itemSearch } }, { tags: { '$regex': itemSearch } }] }] }).limit(3).exec().then((result) => {
+        return result;
+    }).catch((err) => {
+        console.log(err);
+        return handleError(err);
+    });
+
+    return {
+        'user': usuario,
+        'productos': productos
+    };
+
+
+}
+
 function removeItemFromArr(arr, item) {
     var i = arr.indexOf(item);
 
@@ -234,5 +346,6 @@ function removeItemFromArr(arr, item) {
 
 module.exports = {
     home,
-    search
+    search,
+    searchProducts
 }

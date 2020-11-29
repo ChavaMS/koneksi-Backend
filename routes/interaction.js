@@ -11,6 +11,7 @@ api.post('/deleteComment', md_auth.ensureAuth, InteractionController.deleteComme
 api.post('/updateComment', md_auth.ensureAuth, InteractionController.updateComment);
 api.post('/getComment/:page?', InteractionController.getComments);
 api.post('/saveRating', md_auth.ensureAuth, InteractionController.saveRating);
-api.post('/getRating', md_auth.ensureAuth, InteractionController.getRating);
+api.post('/getRating/:userSaved', InteractionController.getRating);
+api.post('/getDistance',InteractionController.getDistance);
 
 module.exports = api;

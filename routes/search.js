@@ -10,6 +10,7 @@ var md_auth = require('../middlewares/authenticate');
 api.get('/home-s', searchController.home);
 api.get('/search/:sub',md_auth.ensureAuth, searchController.search);
 api.get('/search', searchController.search);
+api.post('/search-products/:page?', searchController.searchProducts);
 
 
 module.exports = api;

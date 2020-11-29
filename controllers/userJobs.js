@@ -148,9 +148,9 @@ function updateUserJob(req, res) {
     URL: /get-user-jobs     -> Todos los oficios creados
 */
 function getUserJobs(req, res) {
-
     var userId = req.params.id;
-    if (userId) {
+
+    if (userId && userId != 0) {
         UserJobs.find({ user: userId }).populate('jobs').exec((err, userJobs) => {
             if (err) return res.status(200).send({ message: 'Error al buscar oficios' });
 
@@ -167,9 +167,44 @@ function getUserJobs(req, res) {
                 });
             });
 
-        });
+        }); 
     } else {
-        UserJobs.find().populate('jobs').exec((err, result) => {
+
+        var page = 1;
+        if (req.params.page) {
+            page = req.params.page;
+        }
+        var itemsPerPage = 5;
+
+        var userJobsArray = new Array();
+        var myAggregate = UserJobs.aggregate([{ $group: { _id: "$user" } }]);
+
+        const options = {
+            page: page,
+            limit: itemsPerPage
+        };
+
+        UserJobs.aggregatePaginate(myAggregate, options).then(async function (results) {
+
+            for (let i = 0; i < results.docs.length; i++) {
+                await getUser(results.docs[i]).then((value) => {
+                    userJobsArray[i] = value;
+
+                    //console.log(userProductsArray);
+                });
+    
+            }
+
+            return res.status(200).send({userJobsArray});
+
+        }).catch(function (err) {
+            if(err){
+                return res.status(500).send({message: 'Error en la petición'});
+
+            }
+        });
+
+        /* UserJobs.find().populate('jobs').exec((err, result) => {
             if (err) {
                 console.log(err);
                 return res.status(200).send({ message: 'Error al buscar oficios' });
@@ -182,10 +217,33 @@ function getUserJobs(req, res) {
             return res.status(200).send({
                 jobsMix
             });
-        });
+        }); */
     }
 
 }
+
+async function getUser(id) {
+    var usuario = await User.find({ _id: id }, { password: 0 }).exec().then((result) => {
+        return result[0];
+
+    }).catch((err) => {
+        return handleError(err);
+    });
+
+
+    var trabajos = await UserJobs.find({ user: id }).populate('jobs').limit(4).exec().then((result) => {
+        return result;
+    }).catch((err) => {
+        return handleError(err);
+    });
+
+    return {
+        'user': usuario,
+        'trabajos': trabajos
+    };
+
+}
+
 
 function arrayMix(arreglo) {
     for (let i = arreglo.length - 1; i > 0; i--) {
