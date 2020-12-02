@@ -120,7 +120,6 @@ function deleteProduct(req, res) {
     var productImagePath = "";
     var userProductId = 0;
 
-
     UserProducts.findById({ '_id': productId }, (err, product) => {
         productImagePath = product.image;
         userProductId = product.user;
@@ -136,9 +135,8 @@ function deleteProduct(req, res) {
             return res.status(200).send({ message: 'Producto borrado correctamente' });
         });
     }
-
-
 }
+
 /* 
 FORM-DATA:
     *name

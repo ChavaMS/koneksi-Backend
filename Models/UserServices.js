@@ -10,7 +10,7 @@ var UserServicesSchema = Schema({
     description: String,
     schedule: String,
     images: [String],
-    tags: String
+    tags: [String]
 });
 
 module.exports = mongoose.model('UserServices', UserServicesSchema);

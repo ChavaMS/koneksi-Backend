@@ -1,35 +1,59 @@
 'use strict'
-var UserServices = require('../models/UserServices');
-var uploadServices = require("../middlewares/storageServices"); // Para imágenes
+
+const UserServices = require('../models/UserServices');
+const uploadServices = require("../middlewares/storageServices"); // Para imágenes
+const userServicesImagePath = "./uploads/userServices";
+const multer = require('multer');
 
 var fs = require('fs');
 var path = require('path');
 
+function home(req, res) {
+    res.status(200).send({ message: 'Hola mundo' });
+}
 
 // Registro
 function saveUserServices(req, res){
 
-    // Datos
-    var params = req.body;
-    var userServices = new UserServices();
-    var file_name = req.file.filename;
+    // Error de la imagen
+    uploadServices(req, res, function (err) {
+        if (err) {
+            console.log(err);
+            return res.status(500).send("Error al subir el archivo");
+        }
 
-    // Error en caso de que falten datos
-    if (!params.description || !params.schedule || !params.tags)
-        return res.status(400).send("Faltan datos para la creación del servicio")
+        // Datos
+        var params = req.body;
+        var userServices = new UserServices();
+        var file_name = req.files;
 
-    // Asignacion de atributos al objeto userServices
-    userServices.description = params.description;
-    userServices.schedule = params.schedule;
-    userServices.tags = params.tags;
+        // Error en caso de que falten datos
+        if (!params.description || !params.schedule || !params.id)
+            return res.status(400).send("Faltan datos para la creación del servicio")
 
-    // Guardado del objeto
-    userServices.save((err, userServicesStored) => {
-        if (err) return res.status(500).send("Error al guardar");
-        if (!userServicesStored) return res.status(404).send("No se encontró el objeto de userService");
+        // Asignacion de atributos al objeto userServices
+        userServices.description = params.description;
+        userServices.schedule = params.schedule;
+        userServices.user = params.id;
 
-        return res.status(200).send({userServices: userServicesStored});
-    })
+        // Tags
+        for (let i = 0; i < params.tags.length; i++) {
+            userServices.tags[i] = params.tags[i];
+        }
+
+        // Imagenes
+        for (let i = 0; i < params.images.length; i++) {
+            userServices.images[i] = file_name[i].filename;
+        }
+
+        // Guardado del objeto
+        userServices.save((err, userServicesStored) => {
+            if (err) return res.status(500).send("Error al guardar");
+            if (!userServicesStored) return res.status(404).send("No se encontró el objeto de userService");
+
+            return res.status(200).send({userServices: userServicesStored});
+        })
+    });
 }
 
 function updateUserServices (req, res) {
@@ -78,25 +102,16 @@ function getUserservices (req, res){
 }
 
 function deleteUserServices (req, res){
-    var userServiceId = req.params.id;
-    UserServices.findByIdAndDelete(userServiceId, (err, serviceDeleted) => {
-        if (err) return res.status(500).send({message: 'No se ha podido borrar el servicio'});
-        if (!serviceDeleted) return res.status(404).send({message: 'No se ha encontrado servicio para eliminar'});
-
-        return res.status(200).send({
-            service: serviceDeleted
-        });
-    })
-
-    // -----------------------------------------------------
-
     var serviceId = req.params.id;
-    var serviceImagePath = "";
+    var serviceImagesPaths = [];
     var userServiceId = 0;
 
-
     UserProducts.findById({ '_id': serviceId }, (err, service) => {
-        serviceImagePath = service.image;
+
+        for (let i = 0; i < params.images.length; i++) {
+            serviceImagesPaths[i] = service.images[i];
+        }
+
         userServiceId = service.user;
     });
 
@@ -106,18 +121,32 @@ function deleteUserServices (req, res){
             if (err) return res.status(500).send({ message: 'Error al borrar el servicio' });
 
             // Checar imagenes -------------------------------------------------------------------------------
-            removeFileOfUploads(res, userProductsImagePath + productImagePath, "Imagen borrada correctamente");
+            for (let i = 0; i < serviceImagesPaths.length; i++){
+                removeFileOfUploads(res, userServicesImagePath + serviceImagesPaths[i], "Imagen borrada correctamente");
+            }
 
             return res.status(200).send({ message: 'Servicio borrado correctamente' });
         });
     }
+}
 
+function getServiceImage(req, res) {
+    var imageFile = req.params.imageFile;
+    var path_file = 'uploads/userServices/' + imageFile;
+    fs.exists(path_file, (exists) => {
+        if (exists) {
+            res.sendFile(path.resolve(path_file));
+        } else {
+            res.status(200).send({ message: 'No existe la imagen' });
+        }
+    });
 }
 
 module.exports = {
+    home, 
     saveUserServices,
     updateUserServices,
     getUserservices,
     deleteUserServices,
-    //getImage
+    getServiceImage
 }
