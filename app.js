@@ -12,7 +12,7 @@ var message_routes = require('./routes/message');
 var interaction_rotues = require('./routes/interaction');
 var favorite_routes = require('./routes/favorites');
 var user_jobs_routes = require('./routes/userJobs');
-
+var search_routes = require('./routes/search');
 
 
 var user_services_routes = require('./routes/userServices');
@@ -42,8 +42,12 @@ app.use('/api', interaction_rotues);
 app.use('/api', favorite_routes)
 app.use('/api', user_jobs_routes);
 app.use('/api', search_routes);
+<<<<<<< Updated upstream
 app.use('/api', user_services_routes) 
 app.use('/api', search_routes);
+=======
+
+>>>>>>> Stashed changes
 
 //Exportar
 module.exports = app;

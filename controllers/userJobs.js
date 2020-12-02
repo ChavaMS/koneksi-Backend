@@ -31,14 +31,8 @@ function saveUserJobs(req, res) {
     var params = req.body;
     var error = false;
 
-    console.log(params);
-
     var transaction = new Transaction();
     var userJobs = new UserJobs();
-    console.log(params);
-    var transaction = new Transaction();
-    var userJobs = new UserJobs();
-
 
     try {
         if (!Array.isArray(params.description)) {

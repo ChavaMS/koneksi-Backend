@@ -79,12 +79,11 @@ function saveProducts(req, res) {
 
                     } else {
                         error = true;
-
                     }
                 }
             }
 
-
+            
 
             if (!error) {
                 transaction.run();
