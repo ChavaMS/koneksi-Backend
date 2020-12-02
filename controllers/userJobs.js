@@ -81,7 +81,6 @@ function saveUserJobs(req, res) {
             }
         }
 
-
         if (!error) {
             console.log(error);
             transaction.run();
