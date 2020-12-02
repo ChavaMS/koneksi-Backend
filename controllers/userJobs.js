@@ -3,6 +3,7 @@
 var UserJobs = require('../models/UserJob');
 const Transaction = require("mongoose-transactions");
 const User = require('../models/User');
+var Jobs = require('../models/Jobs');
 
 
 
@@ -31,38 +32,47 @@ function saveUserJobs(req, res) {
     var params = req.body;
     var error = false;
 
+    //console.log(params);
+
+
+    var transaction = new Transaction();
+    var userJobs = new UserJobs();
+    //console.log(params);
     var transaction = new Transaction();
     var userJobs = new UserJobs();
 
+
+
     try {
-        if (!Array.isArray(params.description)) {
+        if (!Array.isArray(params)) {
 
             userJobs.description = params.description;
             //ID del usuario
-            userJobs.user = params.id;
+            userJobs.user = params.user;
             userJobs.schedule = params.schedule;
             //ID de los oficios seleccionados
             userJobs.jobs = params.jobId;
 
             //Se representa como ["tag1,tag2", "tag1,tag2"] 
             userJobs.tags = params.tags.split(',');
-            
+
             transaction.insert('UserJob', userJobs);
 
         } else {
-            for (let i = 0; i < params.description.length; i++) {
+            console.log(params[0]);
+            for (let i = 0; i < params.length; i++) {
                 userJobs = new UserJobs();
-                if (params.description[i] && params.schedule[i] && params.jobId[i] && params.id) {
+                if (params[i].description && params[i].schedule && params[i].jobId && params[i].user) {
 
-                    userJobs.description = params.description[i];
+                    userJobs.description = params[i].description;
                     //ID del usuario
-                    userJobs.user = params.id;
-                    userJobs.schedule = params.schedule[i];
+                    userJobs.user = params[i].user;
+                    userJobs.schedule = params[i].schedule;
                     //ID de los oficios seleccionados
-                    userJobs.jobs = params.jobId[i];
+                    userJobs.jobs = params[i].jobId;
 
                     //Se representa como ["tag1,tag2", "tag1,tag2"] 
-                    userJobs.tags = params.tags[i].split(',');
+                    userJobs.tags = params[i].tags.split(',');
 
                     transaction.insert('UserJob', userJobs);
                 } else {
@@ -70,12 +80,14 @@ function saveUserJobs(req, res) {
                 }
             }
         }
-        
+
 
         if (!error) {
+            console.log(error);
             transaction.run();
             return res.status(200).send({ message: "Oficios agregados con éxito" });
         } else {
+            console.log(error);
             transaction.rollback();
             transaction.clean();
             return res.status(200).send({ message: "Error al agregar los Oficios" });
@@ -161,7 +173,7 @@ function getUserJobs(req, res) {
                 });
             });
 
-        }); 
+        });
     } else {
 
         var page = 1;
@@ -169,49 +181,31 @@ function getUserJobs(req, res) {
             page = req.params.page;
         }
         var itemsPerPage = 5;
-
+        var skip = (page - 1) * itemsPerPage;
         var userJobsArray = new Array();
-        var myAggregate = UserJobs.aggregate([{ $group: { _id: "$user" } }]);
 
-        const options = {
-            page: page,
-            limit: itemsPerPage
-        };
-
-        UserJobs.aggregatePaginate(myAggregate, options).then(async function (results) {
-
-            for (let i = 0; i < results.docs.length; i++) {
-                await getUser(results.docs[i]).then((value) => {
+        UserJobs.aggregate([{ $group: { _id: "$user" } }, { $skip: skip }, { $limit: itemsPerPage }]).exec().then(async function (results) {
+            for (let i = 0; i < results.length; i++) {
+                await getUser(results[i]).then((value) => {
                     userJobsArray[i] = value;
-
-                    //console.log(userProductsArray);
                 });
-    
             }
 
-            return res.status(200).send({userJobsArray});
+            //Total de paginas
+            var total = await UserJobs.aggregate([{ $group: { _id: "$user" } }, { $count: 'total' }]);
+            var totalPages = Math.ceil(total[0].total / itemsPerPage);
 
-        }).catch(function (err) {
-            if(err){
-                return res.status(500).send({message: 'Error en la petición'});
-
+            return res.status(200).send({
+                userJobsArray,
+                total: totalPages
+            });
+        }).catch(err => {
+            console.log(err);
+            if (err) {
+                return res.status(500).send({ message: 'Error en la petición' });
             }
         });
 
-        /* UserJobs.find().populate('jobs').exec((err, result) => {
-            if (err) {
-                console.log(err);
-                return res.status(200).send({ message: 'Error al buscar oficios' });
-
-            }
-            if (!result) return res.status(404).send({ message: 'No hay oficios que mostrar' });
-
-            var jobsMix = arrayMix(result);
-
-            return res.status(200).send({
-                jobsMix
-            });
-        }); */
     }
 
 }
@@ -287,6 +281,18 @@ function saveUserJob(req, res) {
 
 }
 
+function getJobs(req, res){
+    Jobs.find().exec().then(response => {
+        if(response){
+            return res.status(200).send({
+                response
+            });
+        }
+    }).catch(err => {
+        handleError(err);
+    });
+}
+
 module.exports = {
     home,
     pruebas,
@@ -294,5 +300,6 @@ module.exports = {
     deleteUserJob,
     updateUserJob,
     getUserJobs,
-    saveUserJob
+    saveUserJob,
+    getJobs
 }

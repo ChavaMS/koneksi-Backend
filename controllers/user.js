@@ -185,7 +185,6 @@ function loginUser(req, res) {
 function updateUser(req, res) {
     var userId = req.params.id;
     var update = req.body;
-    console.log(req.params);
 
     //Borrar propiedad password
     delete update.password;

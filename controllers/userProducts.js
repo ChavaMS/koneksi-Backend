@@ -34,7 +34,9 @@ FORM-DATA:
 function saveProducts(req, res) {
     uploadProducts(req, res, function (err) {
         if (err) {
-            return res.end("Error uploading file 2");
+
+            console.log(err);
+            return res.end("Error uploading file");
         }
         //Transacción
         var transaction = new Transaction();
@@ -255,43 +257,35 @@ async function getProducts(req, res) {
             page = req.params.page;
         }
         var itemsPerPage = 5;
-
         var userProductsArray = new Array();
+        var skip = ( page - 1 ) * itemsPerPage;
         //Retorna el id de los usuarios con productos
-        var myAggregate = UserProducts.aggregate([{ $group: { _id: "$user" } }]);
-
-        const options = {
-            page: page,
-            limit: itemsPerPage
-        };
-
-        //Pagina lo anterior
-        UserProducts.aggregatePaginate(myAggregate, options).then(async function (results) {
-
-            //console.log(results.docs);
-            //retorna los productos por usuario y su usuario
-            for (let i = 0; i < results.docs.length; i++) {
-                await getUser(results.docs[i]).then((value) => {
+        UserProducts.aggregate([{ $group: { _id: "$user" } }, { $skip: skip }, { $limit: itemsPerPage }]).exec().then(async function (results) {
+            for (let i = 0; i < results.length; i++) {
+                await getUser(results[i]).then((value) => {
                     userProductsArray[i] = value;
-
-                    //console.log(userProductsArray);
                 });
-    
+
             }
+
+            //Total de paginas
+            var total = await UserProducts.aggregate([{ $group: { _id: "$user" } },{$count: 'total'}]);
+            var totalPages = Math.ceil(total[0].total / itemsPerPage);
 
             return res.status(200).send({
                 userProductsArray,
-                total: results.totalPages
+                total: totalPages
             });
 
-        }).catch(function (err) {
-            if(err){
-                return res.status(500).send({message: 'Error en la petición'});
+        }).catch(err => {
+            console.log(err);
+            if (err) {
+                return res.status(500).send({ message: 'Error en la petición' });
 
             }
         });
-        //Todos los productos desordenados
 
+        
     }
 
 }

@@ -4,6 +4,7 @@ var UserJobs = require('../models/UserJob');
 var Jobs = require("../models/Jobs");
 var UserProducts = require('../models/UserProducts');
 var UserServices = require('../models/UserServices');
+var UserJobs = require('../models/UserJob');
 var axios = require('axios');
 const User = require('../models/User');
 var geoip = require('geoip-lite')
@@ -198,13 +199,92 @@ async function search(req, res) {
     });
 }
 
+//--------------------------------------------------------------------------------------------------------------
+async function searchJobs(req, res) {
+    var params = req.body;
+    var itemSearch = params.item.toLowerCase();
+    var page = 1;
+    if (req.params.page) {
+        page = req.params.page;
+    }
+    var itemsPerPage = 5;
+    var userJobsArray = new Array();
+    var skip = (page - 1) * itemsPerPage;
+
+    
+    var job = await Jobs.find({ name: { '$regex': itemSearch } }).exec().then(job => {
+
+        return job
+    }).catch(err => {
+        return res.status(500).send({ message: "error buscando el oficio" });
+    });
+    if(job == undefined){
+        job[0] = 0;
+    }
+
+    UserJobs.aggregate([{ $match: { $or: [{ jobs: job[0]._id }, { tags: { '$regex': itemSearch } }] }}, { $group: { _id: '$user' } }, { $skip: skip }, { $limit: itemsPerPage }]).exec().then(async function (results) {
+        //retorna usuarios y sus productos
+        for (let i = 0; i < results.length; i++) {
+            await getUserJobs(results[i], itemSearch).then((value) => {
+                //if ((country != '' || state != '' || city != '') && (value.user.country == country || value.user.state == state || value.user.city == city)) {
+                    userJobsArray[i] = value;
+                //}
+            });
+        }
+
+        //Total de paginas
+        var total = await UserJobs.aggregate([{ $match: { $or: [{ name: { '$regex': itemSearch } }, { tags: { '$regex': itemSearch } }] } }, { $group: { _id: '$user' } }, { $count: 'total' }]);
+        if (total.length == 0) {
+            total = 0;
+        } else {
+            total = total[0].total;
+        }
+
+        var totalPages = Math.ceil(total / itemsPerPage);
+        //console.log(total);
+        return res.status(200).send({
+            userJobsArray,
+            total: totalPages
+        });
+    }).catch(err => {
+        console.log(err);
+        if (err) {
+            return res.status(500).send({ message: 'Error en la petición 1' });
+        }
+    });
+}
+
+
+async function getUserJobs(id) {
+    var usuario = await User.find({ _id: id }, { password: 0 }).exec().then((result) => {
+        return result[0];
+
+    }).catch((err) => {
+        return handleError(err);
+    });
+
+
+    var trabajos = await UserJobs.find({ user: id }).populate('jobs').limit(4).exec().then((result) => {
+        return result;
+    }).catch((err) => {
+        return handleError(err);
+    });
+
+    return {
+        'user': usuario,
+        'trabajos': trabajos
+    };
+
+}
+
+//--------------------------------------------------------------------------------------------------------------
 function searchProducts(req, res) {
     var params = req.body;
 
     var country;
     var state;
     var city;
-    if (params.country && params.state && params.city) {
+    if (params.country || params.state || params.city) {
         country = params.country;
         state = params.state;
         city = params.city;
@@ -232,58 +312,43 @@ function searchProducts(req, res) {
         page = req.params.page;
     }
     var itemsPerPage = 5;
-
     var userProductsArray = new Array();
-    var skip = ( page - 1 ) * itemsPerPage;
+    var skip = (page - 1) * itemsPerPage;
 
-    //var myAggregate = 
-    UserProducts.aggregate([{ $match: { $or: [{ name: { '$regex': itemSearch } }, { tags: { '$regex': itemSearch } }] } }, { $group: { _id: '$user' } }, { $skip: skip}, { $limit: itemsPerPage }]).exec().then(async function (results) {
-                //retorna usuarios y sus productos
-                for (let i = 0; i < results.docs.length; i++) {
-                    await getUser(results.docs[i], itemSearch).then((value) => {
-                        
-                        //if ( (value.user.country != '' ) && !(value.user.country != country || value.user.state != state || value.user.city != city) ){
-                            userProductsArray[i] = value;
-                        //}
-                    });
-        
-                }
-                //console.log(userProductsArray);
-                return res.status(200).send({ userProductsArray });
-    }).catch(err =>{
-        if(err){
-            return res.status(500).send({ message: 'Error en la petición' });
-        }
-    });
-    /* const options = {
-        page: page,
-        limit: itemsPerPage
-    };
-
-    //Pagina lo anterior
-    UserProducts.aggregatePaginate(myAggregate, options).then(async function (results) {
-
+    //console.log(state);
+    UserProducts.aggregate([{ $match: { $or: [{ name: { '$regex': itemSearch } }, { tags: { '$regex': itemSearch } }] } }, { $group: { _id: '$user' } }, { $skip: skip }, { $limit: itemsPerPage }]).exec().then(async function (results) {
         //retorna usuarios y sus productos
-        for (let i = 0; i < results.docs.length; i++) {
-            await getUser(results.docs[i], itemSearch).then((value) => {
-                
-                //if ( (value.user.country != '' ) && !(value.user.country != country || value.user.state != state || value.user.city != city) ){
-                    userProductsArray[i] = value;
+        for (let i = 0; i < results.length; i++) {
+            await getUser(results[i], itemSearch).then((value) => {
+                //console.log(value);
+                //if ((country != '' || state != '' || city != '') && (value.user.country == country || value.user.state == state || value.user.city == city)) {
+                userProductsArray[i] = value;
                 //}
             });
 
-        }
-        //console.log(userProductsArray);
-        return res.status(200).send({ userProductsArray });
+            //console.log(userProductsArray);
 
-    }).catch(function (err) {
+        }
+        //Total de paginas
+        var total = await UserProducts.aggregate([{ $match: { $or: [{ name: { '$regex': itemSearch } }, { tags: { '$regex': itemSearch } }] } }, { $group: { _id: '$user' } }, { $count: 'total' }]);
+        if (total.length == 0) {
+            total = 0;
+        } else {
+            total = total[0].total;
+        }
+
+        var totalPages = Math.ceil(total / itemsPerPage);
+        //console.log(total);
+        return res.status(200).send({
+            userProductsArray,
+            total: totalPages
+        });
+    }).catch(err => {
+        console.log(err);
         if (err) {
-            //console.log(err);
-            return res.status(500).send({ message: 'Error en la petición' });
-
+            return res.status(500).send({ message: 'Error en la petición 1' });
         }
-    }); */
-
+    });
 }
 
 async function getUser(id, itemSearch) {
@@ -309,6 +374,8 @@ async function getUser(id, itemSearch) {
 
 
 }
+//--------------------------------------------------------------------------------------------------------------
+
 
 function removeItemFromArr(arr, item) {
     var i = arr.indexOf(item);
@@ -347,5 +414,6 @@ function removeItemFromArr(arr, item) {
 module.exports = {
     home,
     search,
-    searchProducts
+    searchProducts,
+    searchJobs
 }
