@@ -14,7 +14,10 @@ var favorite_routes = require('./routes/favorites');
 var user_jobs_routes = require('./routes/userJobs');
 var search_routes = require('./routes/search');
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 
 var user_services_routes = require('./routes/userServices');
 var search_routes = require('./routes/search');
@@ -47,11 +50,15 @@ app.use('/api', user_jobs_routes);
 app.use('/api', search_routes);
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 app.use('/api', user_services_routes) 
 app.use('/api', search_routes);
 =======
 =======
 >>>>>>> Stashed changes
+
+>>>>>>> Stashed changes
+=======
 
 >>>>>>> Stashed changes
 
