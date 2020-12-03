@@ -93,12 +93,12 @@ function getUserservices(req, res) {
             });
         });
     } else {
-        //Todos los productos desordenados
-        UserServices.find().exec((err, result) => {
-            if (err) return res.status(500).send({ message: 'Error al buscar productos' });
+        //Todos los servicios desordenados
+        UserServices.find().populate('user','name surname image cover_page lat lon').exec((err, result) => {
+            if (err) return res.status(500).send({ message: 'Error al buscar servicios' });
 
             if (!result) return res.status(404).send({ message: 'No hay productos que mostrar' });
-
+            //console.log(result);
             return res.status(200).send({ result });
         });
     }
