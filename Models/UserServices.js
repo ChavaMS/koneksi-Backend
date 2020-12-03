@@ -12,5 +12,5 @@ var UserServicesSchema = Schema({
     images: [String],
     tags: [String]
 });
-
+ 
 module.exports = mongoose.model('UserServices', UserServicesSchema);

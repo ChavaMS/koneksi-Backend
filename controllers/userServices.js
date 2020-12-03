@@ -13,7 +13,7 @@ function home(req, res) {
 }
 
 // Registro
-function saveUserServices(req, res){
+function saveUserServices(req, res) {
 
     // Error de la imagen
     uploadServices(req, res, function (err) {
@@ -37,12 +37,15 @@ function saveUserServices(req, res){
         userServices.user = params.id;
 
         // Tags
-        for (let i = 0; i < params.tags.length; i++) {
+        /* for (let i = 0; i < params.tags.length; i++) {
             userServices.tags[i] = params.tags[i];
-        }
+        } */
+        userServices.tags = params.tags.split(',');
+        console.log(userServices.tags);
+        console.log(params.tags);
 
         // Imagenes
-        for (let i = 0; i < params.images.length; i++) {
+        for (let i = 0; i < file_name.length; i++) {
             userServices.images[i] = file_name[i].filename;
         }
 
@@ -51,27 +54,27 @@ function saveUserServices(req, res){
             if (err) return res.status(500).send("Error al guardar");
             if (!userServicesStored) return res.status(404).send("No se encontró el objeto de userService");
 
-            return res.status(200).send({userServices: userServicesStored});
+            return res.status(200).send({ userServices: userServicesStored });
         })
     });
 }
 
-function updateUserServices (req, res) {
+function updateUserServices(req, res) {
     var userServicesId = req.params.id;
     var update = req.body;
 
-    if (userId != req.user.sub) 
+    if (userId != req.user.sub)
         return res.status(200).send({ message: 'No tienes permiso para actualizar los datos del usuario' });
 
     UserServices.findByIdAndUpdate(userServicesId, update, (err, userServicesUpdated) => {
         if (err) return res.status(500).send("Error al actualizar");
         if (!userServicesUpdated) return res.status(404).send("No existe el userService a actulizar");
 
-        return res.status(200).send({userServices: userServicesUpdated});
+        return res.status(200).send({ userServices: userServicesUpdated });
     })
 }
 
-function getUserservices (req, res){
+function getUserservices(req, res) {
     var userId = req.params.id;
 
     if (userId) {
@@ -96,12 +99,12 @@ function getUserservices (req, res){
 
             if (!result) return res.status(404).send({ message: 'No hay productos que mostrar' });
 
-            return res.status(200).send({result});
+            return res.status(200).send({ result });
         });
     }
 }
 
-function deleteUserServices (req, res){
+function deleteUserServices(req, res) {
     var serviceId = req.params.id;
     var serviceImagesPaths = [];
     var userServiceId = 0;
@@ -121,7 +124,7 @@ function deleteUserServices (req, res){
             if (err) return res.status(500).send({ message: 'Error al borrar el servicio' });
 
             // Checar imagenes -------------------------------------------------------------------------------
-            for (let i = 0; i < serviceImagesPaths.length; i++){
+            for (let i = 0; i < serviceImagesPaths.length; i++) {
                 removeFileOfUploads(res, userServicesImagePath + serviceImagesPaths[i], "Imagen borrada correctamente");
             }
 
@@ -143,7 +146,7 @@ function getServiceImage(req, res) {
 }
 
 module.exports = {
-    home, 
+    home,
     saveUserServices,
     updateUserServices,
     getUserservices,

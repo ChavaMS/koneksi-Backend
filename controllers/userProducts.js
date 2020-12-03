@@ -85,7 +85,7 @@ function saveProducts(req, res) {
                 }
             }
 
-            
+
 
             if (!error) {
                 transaction.run();
@@ -258,7 +258,7 @@ async function getProducts(req, res) {
         }
         var itemsPerPage = 5;
         var userProductsArray = new Array();
-        var skip = ( page - 1 ) * itemsPerPage;
+        var skip = (page - 1) * itemsPerPage;
         //Retorna el id de los usuarios con productos
         UserProducts.aggregate([{ $group: { _id: "$user" } }, { $skip: skip }, { $limit: itemsPerPage }]).exec().then(async function (results) {
             for (let i = 0; i < results.length; i++) {
@@ -269,8 +269,13 @@ async function getProducts(req, res) {
             }
 
             //Total de paginas
-            var total = await UserProducts.aggregate([{ $group: { _id: "$user" } },{$count: 'total'}]);
-            var totalPages = Math.ceil(total[0].total / itemsPerPage);
+            var total = await UserProducts.aggregate([{ $group: { _id: "$user" } }, { $count: 'total' }]);
+            var totalPages;
+            if (total[0]) {
+                totalPages = Math.ceil(total[0].total / itemsPerPage);
+            } else {
+                totalPages = 0;
+            }
 
             return res.status(200).send({
                 userProductsArray,
@@ -285,7 +290,7 @@ async function getProducts(req, res) {
             }
         });
 
-        
+
     }
 
 }
