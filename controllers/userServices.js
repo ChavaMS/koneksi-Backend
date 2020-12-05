@@ -37,9 +37,6 @@ function saveUserServices(req, res) {
         userServices.user = params.id;
 
         // Tags
-        /* for (let i = 0; i < params.tags.length; i++) {
-            userServices.tags[i] = params.tags[i];
-        } */
         userServices.tags = params.tags.split(',');
         console.log(userServices.tags);
         console.log(params.tags);
@@ -77,7 +74,7 @@ function updateUserServices(req, res) {
 function getUserservices(req, res) {
     var userId = req.params.id;
 
-    if (userId) {
+    if (userId && userId != 1) {
         UserServices.find({ user: userId }, { user: 0 }).exec((err1, services) => {
             if (err1) return res.status(500).send({ message: 'Error al buscar el servicio' });
             if (!services) return res.status(404).send({ message: 'No hay servicio que mostrar' });
@@ -93,13 +90,22 @@ function getUserservices(req, res) {
             });
         });
     } else {
+        var page = 1;
+        if (req.params.page) {
+            page = req.params.page;
+        }
+        var itemsPerPage = 5;
         //Todos los servicios desordenados
-        UserServices.find().populate('user','name surname image cover_page lat lon').exec((err, result) => {
+        UserServices.find().populate('user', 'name surname image cover_page lat lon').paginate(page, itemsPerPage, (err, services, total) => {
             if (err) return res.status(500).send({ message: 'Error al buscar servicios' });
 
-            if (!result) return res.status(404).send({ message: 'No hay productos que mostrar' });
+            if (!services) return res.status(404).send({ message: 'No hay productos que mostrar' });
             //console.log(result);
-            return res.status(200).send({ result });
+            return res.status(200).send({
+                services,
+                total,
+                pages: Math.ceil(total / itemsPerPage)
+            });
         });
     }
 }

@@ -194,7 +194,7 @@ function saveProduct(req, res) {
         if (err) {
             return res.end("Error uploading file 2");
         }
-
+        
         //DATOS
         var params = req.body;
         var file_name = req.files[0].filename;

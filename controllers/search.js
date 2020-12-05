@@ -211,23 +211,23 @@ async function searchJobs(req, res) {
     var userJobsArray = new Array();
     var skip = (page - 1) * itemsPerPage;
 
-    
+
     var job = await Jobs.find({ name: { '$regex': itemSearch } }).exec().then(job => {
 
         return job
     }).catch(err => {
         return res.status(500).send({ message: "error buscando el oficio" });
     });
-    if(job == undefined){
+    if (job == undefined) {
         job[0] = 0;
     }
 
-    UserJobs.aggregate([{ $match: { $or: [{ jobs: job[0]._id }, { tags: { '$regex': itemSearch } }] }}, { $group: { _id: '$user' } }, { $skip: skip }, { $limit: itemsPerPage }]).exec().then(async function (results) {
+    UserJobs.aggregate([{ $match: { $or: [{ jobs: job[0]._id }, { tags: { '$regex': itemSearch } }] } }, { $group: { _id: '$user' } }, { $skip: skip }, { $limit: itemsPerPage }]).exec().then(async function (results) {
         //retorna usuarios y sus productos
         for (let i = 0; i < results.length; i++) {
             await getUserJobs(results[i], itemSearch).then((value) => {
                 //if ((country != '' || state != '' || city != '') && (value.user.country == country || value.user.state == state || value.user.city == city)) {
-                    userJobsArray[i] = value;
+                userJobsArray[i] = value;
                 //}
             });
         }
@@ -315,11 +315,10 @@ function searchProducts(req, res) {
     var userProductsArray = new Array();
     var skip = (page - 1) * itemsPerPage;
 
-    //console.log(state);
     UserProducts.aggregate([{ $match: { $or: [{ name: { '$regex': itemSearch } }, { tags: { '$regex': itemSearch } }] } }, { $group: { _id: '$user' } }, { $skip: skip }, { $limit: itemsPerPage }]).exec().then(async function (results) {
         //retorna usuarios y sus productos
         for (let i = 0; i < results.length; i++) {
-            await getUser(results[i], itemSearch).then((value) => {
+            await getUserProducts(results[i], itemSearch).then((value) => {
                 //console.log(value);
                 //if ((country != '' || state != '' || city != '') && (value.user.country == country || value.user.state == state || value.user.city == city)) {
                 userProductsArray[i] = value;
@@ -351,7 +350,7 @@ function searchProducts(req, res) {
     });
 }
 
-async function getUser(id, itemSearch) {
+async function getUserProducts(id, itemSearch) {
     var usuario = await User.find({ _id: id }, { password: 0 }).exec().then((result) => {
         return result[0];
 
@@ -375,7 +374,31 @@ async function getUser(id, itemSearch) {
 
 }
 //--------------------------------------------------------------------------------------------------------------
+function searchService(req, res) {
+    var params = req.body;
 
+    var itemSearch = params.item.toLowerCase();
+    var page = 1;
+    if (req.params.page) {
+        page = req.params.page;
+    }
+    var itemsPerPage = 5;
+
+    UserServices.find({ $or: [{ name: { '$regex': itemSearch } }, { tags: { '$regex': itemSearch } }] }).populate('user', 'name surname image').paginate(page, itemsPerPage, (err, services, total) => {
+
+        if (err) return res.status(500).send({ message: 'Error en la petición' });
+
+        if (!services) return res.status(500).send({ message: 'No hay resultados que mostrar' });
+
+        return res.status(200).send({
+            userServiceArray: services,
+            total,
+            pages: Math.ceil(total / itemsPerPage)
+        });
+
+    });
+
+}
 
 function removeItemFromArr(arr, item) {
     var i = arr.indexOf(item);
@@ -387,33 +410,11 @@ function removeItemFromArr(arr, item) {
     return arr;
 }
 
-/* async function obtenerDistancia(latFrom, lonFrom, latTo, lonTo) {
-    console.log(latFrom);
-    console.log(lonFrom);
-    console.log(latTo);
-    console.log(lonTo);
-    let origin = latFrom + "," + lonFrom;
-    let destination = latTo + "," + lonTo;
-    console.log("Si entro");
-
-    var distancia = await axios.get('https://maps.googleapis.com/maps/api/distancematrix/json', {
-        params: {
-            units: "km",
-            origins: origin,
-            destinations: destination,
-            key: 'AIzaSyDgRN1AR5CnGjgdcc3f93CzMho80a2yWog'
-        }
-    });
-
-    return distancia;
-
-    //console.log(distancia.rows[0].elements[0].distance.text);
-    //console.log(distancia.rows[0].elements[0].distance.value);
-} */
 
 module.exports = {
     home,
     search,
     searchProducts,
-    searchJobs
+    searchJobs,
+    searchService
 }

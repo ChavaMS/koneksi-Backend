@@ -12,6 +12,7 @@ api.get('/search/:sub',md_auth.ensureAuth, searchController.search);
 api.get('/search', searchController.search);
 api.post('/search-products/:page?', searchController.searchProducts);
 api.post('/search-jobs/:page?', searchController.searchJobs);
+api.post('/search-services/:page?', searchController.searchService);
 
 
 module.exports = api;
