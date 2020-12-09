@@ -61,15 +61,15 @@ function updateUserServices(req, res) {
     var userServicesId = req.params.id;
     var update = req.body;
 
-    if (userId != req.user.sub)
-        return res.status(200).send({ message: 'No tienes permiso para actualizar los datos del usuario' });
+    console.log(update);
 
-    UserServices.findByIdAndUpdate(userServicesId, update, (err, userServicesUpdated) => {
+    
+    /* UserServices.findByIdAndUpdate(userServicesId, update, (err, userServicesUpdated) => {
         if (err) return res.status(500).send("Error al actualizar");
         if (!userServicesUpdated) return res.status(404).send("No existe el userService a actulizar");
 
         return res.status(200).send({ userServices: userServicesUpdated });
-    })
+    }); */
 }
 
 function getUserservices(req, res) {

@@ -14,10 +14,13 @@ api.get('/get-image-cover/:imageFile', UserController.getImageCover);
 
 //RUTAS PUT
 api.put('/update-user/:id', md_auth.ensureAuth, UserController.updateUser);
+api.put('/update-location/:id', md_auth.ensureAuth, UserController.updateLocation);
 
 //RUTAS POST
 api.post('/login', UserController.loginUser);
 api.post('/saveUser', UserController.saveUser);
 api.post('/updateCoverPage', UserController.updateCoverPage);
+api.post('/updateAvatar', UserController.updateAvatar);
+
 
 module.exports = api;

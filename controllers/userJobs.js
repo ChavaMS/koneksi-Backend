@@ -106,19 +106,30 @@ function saveUserJobs(req, res) {
     URL: /delete-job/:id -> id del oficio
 */
 function deleteUserJob(req, res) {
+
     var userJobId = req.params.id;
-    var userId = 0;
-    UserJobs.find({ '_id': userJobId }).exec((err, job) => {
-        userId = job.user;
-    });
+    var userLogin = req.user.sub;
 
-    if (userId == userJobId) {
-        UserJobs.deleteOne({ 'user': req.user.sub, '_id': userJobId }, (err, result) => {
-            if (err) return res.status(500).send({ message: 'Error al borrar el oficio' });
+    if (userLogin) {
+        console.log(userLogin);
+        console.log(userJobId);
+        UserJobs.count({ user: userLogin, '_id': userJobId }).exec().then(response => {
+            if (response > 1) {
+                UserJobs.deleteOne({ 'user': userLogin, '_id': userJobId }, (err, result) => {
+                    if (err) return res.status(500).send({ message: 'Error al borrar el oficio' });
 
-
-            return res.status(200).send({ message: 'Oficio borrado correctamente' });
+                    return res.status(200).send({ message: 'Oficio borrado correctamente' });
+                });
+            } else {
+                return res.status(200).send({ message: 'No puedes quedarte sin oficio' });
+            }
+        }).catch(err => {
+            if (err) {
+                return res.status(200).send({ message: 'Error al borrar oficios' });
+            }
         });
+    } else {
+        return res.status(200).send({ message: 'El oficio no le pertenece' });
     }
 
 }
@@ -136,14 +147,14 @@ function updateUserJob(req, res) {
 
     var userJobId = req.params.id;
     var update = req.body;
-
+    console.log(update);
     UserJobs.findByIdAndUpdate(userJobId, update, { new: true }, (err, userJobUpdated) => {
         if (err) return res.status(500).send({ message: 'Error en la petición' });
 
         if (!userJobUpdated) return res.status(404).send({ message: 'No se ha podido actualizar el oficio' });
 
         return res.status(200).send({
-            product: userJobUpdated
+            job: userJobUpdated
         });
     });
 }
@@ -280,9 +291,9 @@ function saveUserJob(req, res) {
 
 }
 
-function getJobs(req, res){
+function getJobs(req, res) {
     Jobs.find().exec().then(response => {
-        if(response){
+        if (response) {
             return res.status(200).send({
                 response
             });

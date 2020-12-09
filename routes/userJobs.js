@@ -20,7 +20,7 @@ api.post('/save-user-jobs', UserJobsController.saveUserJobs);
 api.post('/save-user-job',md_auth.ensureAuth, UserJobsController.saveUserJob);
 
 //RUTAS DELETE
-api.delete('/delete-job/:id', md_auth.ensureAuth, userJobs.deleteUserJob);
+api.delete('/delete-job/:id', md_auth.ensureAuth, UserJobsController.deleteUserJob);
 
 //RUTAS PUT
 api.put('/update-user-job/:id', md_auth.ensureAuth, UserJobsController.updateUserJob);

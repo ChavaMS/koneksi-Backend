@@ -5,6 +5,7 @@ var Jobs = require('../models/Jobs');
 var bcrypt = require('bcrypt-nodejs');
 var uploadProfile = require("../middlewares/storageProfile");
 var uploadBanner = require("../middlewares/storageBanner");
+var uploadAvatar = require("../middlewares/storageAvatar");
 
 var userProfilePath = "./uploads/users/profile/";
 var userCoverPath = "./uploads/users/banner/";
@@ -66,7 +67,6 @@ function saveUser(req, res) {
                     key: 'AIzaSyDgRN1AR5CnGjgdcc3f93CzMho80a2yWog'
                 }
             }).then(function (resp) {
-
                 //DATOS BASICOS
                 user.name = params.name;
                 user.surname = params.surname;
@@ -87,7 +87,6 @@ function saveUser(req, res) {
                 //FECHA
                 user.created_at = Date.now();
                 user.last_time_connected = Date.now();
-
                 User.find({
                     email: user.email.toLowerCase()
                 }).exec((err, users) => {
@@ -140,7 +139,7 @@ function loginUser(req, res) {
                 bcrypt.compare(password, user.password, (err, check) => {
                     if (check) {
                         var userId = user._id;
-                        
+
                         //Devolver datos de usuario
                         if (params.gettoken) {
                             //Actualizamos la ultima vez que se conectó el usuario
@@ -215,6 +214,48 @@ function updateUser(req, res) {
 }
 
 
+async function updateLocation(req, res) {
+    var userId = req.params.id;
+    var update = req.body;
+
+    if (update.street || update.suburb || update.cp) {
+        let coords = await location(update);
+        update.lat = coords.lat;
+        update.lon = coords.lon;
+    }
+
+    User.findByIdAndUpdate(userId, update, { new: true }, (err, userUpdated) => {
+        if (err) return res.status(500).send({ message: 'Error en la petición' });
+
+        if (!userUpdated) return res.status(404).send({ message: 'No se ha podido actualizar el usuario' });
+
+        return res.status(200).send({
+            user: userUpdated
+        });
+    });
+
+}
+
+async function location(params) {
+    let location = params.cp + ' ' + params.street + ' ' + params.suburb + ',' + params.city + ' ' + params.state + ' Mexico';
+    var lat, lon;
+    await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
+        params: {
+            address: location,
+            key: 'AIzaSyDgRN1AR5CnGjgdcc3f93CzMho80a2yWog'
+        }
+    }).then(function (resp) {
+        lat = resp.data.results[0].geometry.location.lat;
+        lon = resp.data.results[0].geometry.location.lng;
+    });
+
+    return{
+        lat,
+        lon
+    }
+}
+
+
 function updateCoverPage(req, res) {
     uploadBanner(req, res, function (err) {
         if (err) {
@@ -223,18 +264,57 @@ function updateCoverPage(req, res) {
         //DATOS
         var email = req.body.email;
         var file_name = req.file.filename;
-        if (email && file_name) {
-            User.findOneAndUpdate({ email: email }, { $set: { cover_page: file_name } }).exec((err, user) => {
-                if (err) {
-                    return removeFileOfUploads(res, userCoverPath + file_name, "Error al actualizar el banner");
-                }
+        var old_file_name = '';
+        User.find({ email: email }).exec((err, user) => {
+            if (err) {
+                return res.status(200).send({ message: 'Error al obtener la imagen del usuario' });
+            }
+            if (user) {
+                old_file_name = user.image;
+                if (email && file_name) {
+                    User.findOneAndUpdate({ email: email }, { $set: { cover_page: file_name } }).exec((err, user) => {
+                        if (err) {
+                            return removeFileOfUploads(res, userCoverPath + file_name, "Error al actualizar el banner");
+                        }
 
-                if (user) {
-                    res.status(200).send({ user: user });
+                        if (user) {
+                            removeFileOfUploads(res, userCoverPath + old_file_name, user);
+                        }
+                    });
                 }
+            }
+        });
+    });
+}
 
-            });
+function updateAvatar(req, res) {
+    uploadAvatar(req, res, function (err) {
+        if (err) {
+            return res.end("Error uploading file");
         }
+
+        //DATOS
+        var email = req.body.email;
+        var file_name = req.file.filename;
+        var old_file_name = '';
+        User.find({ email: email }).exec((err, user) => {
+            if (err) {
+                return res.status(200).send({ message: 'Error al obtener la imagen del usuario' });
+            }
+            if (user) {
+                old_file_name = user.image;
+                if (email && file_name) {
+                    User.findOneAndUpdate({ email: email }, { $set: { image: file_name } }).exec((err, user) => {
+                        if (err) {
+                            return removeFileOfUploads(res, userProfilePath + file_name, "Error al actualizar el avatar");
+                        }
+                        if (user) {
+                            removeFileOfUploads(res, userProfilePath + old_file_name, user);
+                        }
+                    });
+                }
+            }
+        });
     });
 }
 
@@ -279,5 +359,7 @@ module.exports = {
     getImageProfile,
     getImageCover,
     loginUser,
-    updateUser
+    updateUser,
+    updateAvatar,
+    updateLocation
 }
