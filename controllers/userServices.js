@@ -4,6 +4,7 @@ const UserServices = require('../models/UserServices');
 const uploadServices = require("../middlewares/storageServices"); // Para imágenes
 const userServicesImagePath = "./uploads/userServices";
 const multer = require('multer');
+const User = require('../models/User');
 
 var fs = require('fs');
 var path = require('path');

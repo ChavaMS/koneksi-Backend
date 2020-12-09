@@ -218,7 +218,7 @@ async function searchJobs(req, res) {
     }).catch(err => {
         return res.status(500).send({ message: "error buscando el oficio" });
     });
-    if (job == undefined) {
+    if (job == undefined || job == "" || job == null) {
         job[0] = 0;
     }
 
