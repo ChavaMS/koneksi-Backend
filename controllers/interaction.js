@@ -73,16 +73,31 @@ function getComments(req, res) {
 
 //Verificar que solo se pueda dejar un rating por persona
 function saveRating(req, res) {
+
     var rate = new Rating();
     rate.user = req.user.sub;
     rate.userSaved = req.body.userSaved;
     rate.rating = req.body.rating;
 
-    rate.save((err, ratingtStored) => {
-        if (err) return res.status(500).send({ message: 'Error en la petición' });
-        if (!ratingtStored) return res.status(500).send({ message: 'Error al guardar tu calificación' });
+    Rating.find( { user: rate.user, userSaved: rate.userSaved }, function (err, results) {
+        if (err) { return res.status(500).send({ message: 'Error en la petición' }); }
+        if (!results.length) {
+            rate.save((err, ratingStored) => {
+                if (err) return res.status(500).send({ message: 'Error en la petición' });
+                if (!ratingStored) return res.status(500).send({ message: 'Error al guardar tu calificación' });
+    
+            return res.status(200).send({ message: "Calificación guardada" });
+        });
+        return;
+        }
 
-        return res.status(200).send({ message: "Calificación guardada" });
+        Rating.findByIdAndUpdate(results[0]._id, { rating : rate.rating }, { new: true }, (err, ratingUpdated) => {
+            if (err) return res.status(500).send({ message: 'Error en la petición' });
+            return res.status(200).send({
+                rating: ratingUpdated
+            });
+        });
+
     });
 
 }
@@ -91,7 +106,7 @@ function getRating(req, res) {
     var userSav = req.params.userSaved;
 
     Rating.find({ userSaved: userSav }).exec((err, valor) => {
-        if (err) return res.status(500).send({ message: "Error al borrar el comentario" });
+        if (err) return res.status(500).send({ message: "Error al buscar calificacion del usuario" });
         let promedio = 0;
         let tamano = 0;
         if (valor.length == 0) {
@@ -105,7 +120,6 @@ function getRating(req, res) {
 
             promedio /= tamano;
         }
-
 
         return res.status(200).send({ promedio: Math.round(promedio) });
     });
