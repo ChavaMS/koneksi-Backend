@@ -2,17 +2,25 @@
 
 var mongoose = require('mongoose');
 var app = require('./app');
-var port = 3800;
+
+//Leer localhost de variables y puerto
+const host = process.env.HOST || '0.0.0.0';
+const port = process.env.PORT || 3000;
+
+
+//Importar variables de entorno
+require('dotenv').config({ path: 'variables.env' });
+
 
 //Conexion a la DB
 mongoose.set('useFindAndModify', false);
 mongoose.Promise = global.Promise;
-mongoose.connect('mongodb://localhost:27017/koneksi_bd', { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => {
         console.log('La conexion a la bd se ha realizado correctamente.');
 
         //Crear servidor
-        app.listen(port, () => {
+        app.listen(port, host, () => {
             console.log('Servidor corriendo en http://localhost:3800');
         });
 
