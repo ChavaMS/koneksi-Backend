@@ -142,8 +142,6 @@ function getDistance(req, res){
             distanceValue: resp.data.rows[0].elements[0].distance.value
         });
 
-        /* console.log(resp.data.rows[0].elements[0].distance.text);
-        console.log(resp.data.rows[0].elements[0].distance.value); */
     }).catch(err => {
         console.log(err);
     });

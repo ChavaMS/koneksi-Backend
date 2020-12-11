@@ -59,7 +59,7 @@ function saveUserJobs(req, res) {
             transaction.insert('UserJob', userJobs);
 
         } else {
-            console.log(params[0]);
+
             for (let i = 0; i < params.length; i++) {
                 userJobs = new UserJobs();
                 if (params[i].description && params[i].schedule && params[i].jobId && params[i].user) {
@@ -96,7 +96,6 @@ function saveUserJobs(req, res) {
         console.error(error);
         const rollbackObj = transaction.rollback().catch(console.error);
         transaction.clean();
-        console.log(transaction);
         return res.status(200).send({ message: "Error al agregar los oficios" });
     }
 
@@ -111,8 +110,6 @@ function deleteUserJob(req, res) {
     var userLogin = req.user.sub;
 
     if (userLogin) {
-        console.log(userLogin);
-        console.log(userJobId);
         UserJobs.count({ user: userLogin, '_id': userJobId }).exec().then(response => {
             if (response > 1) {
                 UserJobs.deleteOne({ 'user': userLogin, '_id': userJobId }, (err, result) => {
@@ -147,7 +144,6 @@ function updateUserJob(req, res) {
 
     var userJobId = req.params.id;
     var update = req.body;
-    console.log(update);
     UserJobs.findByIdAndUpdate(userJobId, update, { new: true }, (err, userJobUpdated) => {
         if (err) return res.status(500).send({ message: 'Error en la petición' });
 

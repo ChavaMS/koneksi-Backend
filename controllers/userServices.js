@@ -5,6 +5,7 @@ const uploadServices = require("../middlewares/storageServices"); // Para imáge
 const userServicesImagePath = "./uploads/userServices";
 const multer = require('multer');
 const User = require('../models/User');
+var file_path = './uploads/userServices/';
 
 var fs = require('fs');
 var path = require('path');
@@ -39,8 +40,7 @@ function saveUserServices(req, res) {
 
         // Tags
         userServices.tags = params.tags.split(',');
-        console.log(userServices.tags);
-        console.log(params.tags);
+
 
         // Imagenes
         for (let i = 0; i < file_name.length; i++) {
@@ -57,20 +57,76 @@ function saveUserServices(req, res) {
     });
 }
 
+function updateImages(req, res) {
+    uploadServices(req, res, function (err) {
+        if (err) {
+            console.log(err);
+            return res.status(500).send("Error al subir el archivo");
+        }
+
+        var userServiceId = req.body.id;
+        var file_name = req.files;
+        var imagenes = new Array();
+
+
+        // Imagenes
+        for (let i = 0; i < file_name.length; i++) {
+            imagenes.push(file_name[i].filename);
+        }
+
+        UserServices.update({ '_id': userServiceId }, { $addToSet: { images: { $each: imagenes } } }).exec().then(response => {
+            if (response) {
+                return res.status(200).send({ message: "Imagenes agregadas con éxito" });
+            }
+        }).catch(err => {
+            if (err) {
+                for (let i = 0; i < file_name.length; i++) {
+                    removeFileOfUploads(file_path + file_name[i].filename);
+                }
+                return res.status(200).send({ message: "Error al subir las imagenes" });
+            }
+        });
+
+    });
+}
+
 function updateUserServices(req, res) {
     var userServicesId = req.params.id;
     var update = req.body;
-
-    console.log(update);
-
-    
-    /* UserServices.findByIdAndUpdate(userServicesId, update, (err, userServicesUpdated) => {
+    UserServices.findByIdAndUpdate(userServicesId, update, (err, userServicesUpdated) => {
+        console.log(err);
         if (err) return res.status(500).send("Error al actualizar");
         if (!userServicesUpdated) return res.status(404).send("No existe el userService a actulizar");
 
         return res.status(200).send({ userServices: userServicesUpdated });
-    }); */
+    });
 }
+
+
+function deletePhoto(req, res) {
+    var id = req.params.id;
+    var image = req.params.image;
+
+    UserServices.update({ '_id': id }, { $pull: { images: image } }).exec().then(response => {
+        if (!response) return res.status(200).send({ message: 'Error al borrar la imagen' });
+        if (response) {
+            removeFileOfUploads(file_path + image);
+            return res.status(200).send({ message: 'Imagen borrada con éxito' });
+        }
+    }).catch(error => {
+        if (error) {
+            return res.status(200).send({ message: 'Error al borrar la imagen' });
+        }
+    });
+
+}
+
+//MANEJO DE ARCHIVOS
+function removeFileOfUploads(file_path) {
+    fs.unlink(file_path, (err) => {
+    });
+}
+
 
 function getUserservices(req, res) {
     var userId = req.params.id;
@@ -158,5 +214,7 @@ module.exports = {
     updateUserServices,
     getUserservices,
     deleteUserServices,
-    getServiceImage
+    getServiceImage,
+    deletePhoto,
+    updateImages
 }

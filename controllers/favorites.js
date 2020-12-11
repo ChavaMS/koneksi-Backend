@@ -40,7 +40,6 @@ function getFavorite(req, res){
                 }
             });
         });
-        console.log(listaUserJob);
 
     
         return res.status(200).send({

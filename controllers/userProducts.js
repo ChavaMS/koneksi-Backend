@@ -124,18 +124,20 @@ function deleteProduct(req, res) {
     UserProducts.findById({ '_id': productId }, (err, product) => {
         productImagePath = product.image;
         userProductId = product.user;
+
+        //Se comrpueba que el que va a borrar el producto, sea el que lo creó
+        if (userProductId == req.user.sub) {
+            UserProducts.deleteOne({ 'user': req.user.sub, '_id': productId }, (err, result) => {
+                if (err) return res.status(500).send({ message: 'Error al borrar el product' });
+
+                removeFileOfUploads(res, userProductsImagePath + productImagePath, "Imagen borrada correctamente");
+
+                return res.status(200).send({ message: 'Producto borrado correctamente' });
+            });
+        }
     });
 
-    //Se comrpueba que el que va a borrar el producto, sea el que lo creó
-    if (userProductId == req.user.sub) {
-        UserProducts.deleteOne({ 'user': req.user.sub, '_id': productId }, (err, result) => {
-            if (err) return res.status(500).send({ message: 'Error al borrar el product' });
 
-            removeFileOfUploads(res, userProductsImagePath + productImagePath, "Imagen borrada correctamente");
-
-            return res.status(200).send({ message: 'Producto borrado correctamente' });
-        });
-    }
 }
 
 /* 
@@ -158,20 +160,18 @@ function updateProduct(req, res) {
         var update = req.body;
         var productImagePath = "";
 
-        if (req.files[0]) {
+        if (req.files && req.files[0]) {
             UserProducts.findById({ '_id': productId }, (err, product) => {
                 productImagePath = product.image;
             });
 
             update.image = req.files[0].filename;
         }
-
         UserProducts.findByIdAndUpdate(productId, update, { new: true }, (err, productUpdated) => {
             if (err) return res.status(500).send({ message: 'Error en la petición' });
 
             if (!productUpdated) return res.status(404).send({ message: 'No se ha podido actualizar el producto' });
-
-            if (req.files[0]) removeFileOfUploads(res, userProductsImagePath + productImagePath, "Imagen borrada correctamente");
+            if (req.files && req.files[0]) removeFileOfUploads(res, userProductsImagePath + productImagePath, "Imagen borrada correctamente");
 
             return res.status(200).send({
                 product: productUpdated
@@ -194,7 +194,7 @@ function saveProduct(req, res) {
         if (err) {
             return res.end("Error uploading file 2");
         }
-        
+
         //DATOS
         var params = req.body;
         var file_name = req.files[0].filename;
@@ -232,7 +232,6 @@ async function getProducts(req, res) {
     var userId = req.params.id;
 
     if (userId && userId != 0) {
-        console.log('entró');
         UserProducts.find({ user: userId }, { user: 0 }).exec((err1, products) => {
             if (err1) return res.status(500).send({ message: 'Error al buscar productos' });
 
@@ -331,9 +330,7 @@ function arrayMix(arreglo) {
 
 //MANEJO DE ARCHIVOS
 function removeFileOfUploads(res, file_path, message) {
-    console.log(file_path);
     fs.unlink(file_path, (err) => {
-        console.log('Borrado');
     });
 }
 
