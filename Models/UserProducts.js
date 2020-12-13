@@ -9,7 +9,7 @@ var UserProductsSchema = Schema({
     user: {type: Schema.ObjectId, ref: 'User'},
     name: String,
     original_name: String,
-    image: String,
+    image: [Object],
     price: Number,
     description: String,
     tags: [String]

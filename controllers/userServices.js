@@ -2,10 +2,22 @@
 
 const UserServices = require('../models/UserServices');
 const uploadServices = require("../middlewares/storageServices"); // Para imágenes
-const userServicesImagePath = "./uploads/userServices";
 const multer = require('multer');
 const User = require('../models/User');
-var file_path = './uploads/userServices/';
+const cloudinary = require('../middlewares/cloudinary');
+
+/*------------------- CLOUDINARY --------------*/
+const cloudinaryApi = require('cloudinary');
+const dotenv = require('dotenv');
+
+dotenv.config({ path: 'cloudinary.env' });
+
+cloudinaryApi.config({
+    cloud_name: process.env.CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+})
+//-------------------------------------------
 
 var fs = require('fs');
 var path = require('path');
@@ -18,10 +30,28 @@ function home(req, res) {
 function saveUserServices(req, res) {
 
     // Error de la imagen
-    uploadServices(req, res, function (err) {
+    uploadServices(req, res, async function (err) {
         if (err) {
             console.log(err);
             return res.status(500).send("Error al subir el archivo");
+        }
+
+        const uploader = async (path) => await cloudinary.uploads(path, 'uploads/userService');
+        var files = req.files;
+
+        if (req.method === 'POST') {
+            var urls = new Array();
+            for (const file of files) {
+                const { path } = file;
+                const newPath = await uploader(path)
+                urls.push(newPath)
+                fs.unlinkSync(path)
+            }
+
+        } else {
+            res.status(405).json({
+                err: `${req.method} method not allowed`
+            })
         }
 
         // Datos
@@ -44,13 +74,23 @@ function saveUserServices(req, res) {
 
         // Imagenes
         for (let i = 0; i < file_name.length; i++) {
-            userServices.images[i] = file_name[i].filename;
+            userServices.images[i] = urls[i];
         }
 
         // Guardado del objeto
         userServices.save((err, userServicesStored) => {
-            if (err) return res.status(500).send("Error al guardar");
-            if (!userServicesStored) return res.status(404).send("No se encontró el objeto de userService");
+            if (err) {
+                for (let i = 0; i < userServices.images.length; i++) {
+                    removeFileOfUploads(userServices.images[i].id);
+                }
+                return res.status(500).send("Error al guardar");
+            }
+            if (!userServicesStored) {
+                for (let i = 0; i < userServices.images.length; i++) {
+                    removeFileOfUploads(userServices.images[i].id);
+                }
+                return res.status(404).send("No se encontró el objeto de userService");
+            }
 
             return res.status(200).send({ userServices: userServicesStored });
         })
@@ -58,20 +98,38 @@ function saveUserServices(req, res) {
 }
 
 function updateImages(req, res) {
-    uploadServices(req, res, function (err) {
+    uploadServices(req, res, async function (err) {
         if (err) {
             console.log(err);
             return res.status(500).send("Error al subir el archivo");
         }
 
+
         var userServiceId = req.body.id;
-        var file_name = req.files;
         var imagenes = new Array();
+
+        const uploader = async (path) => await cloudinary.uploads(path, 'uploads/userService');
+        var files = req.files;
+
+        if (req.method === 'PUT') {
+            var urls = new Array();
+            for (const file of files) {
+                const { path } = file;
+                const newPath = await uploader(path)
+                urls.push(newPath)
+                fs.unlinkSync(path)
+            }
+
+        } else {
+            res.status(405).json({
+                err: `${req.method} method not allowed`
+            })
+        }
 
 
         // Imagenes
-        for (let i = 0; i < file_name.length; i++) {
-            imagenes.push(file_name[i].filename);
+        for (let i = 0; i < urls.length; i++) {
+            imagenes.push(urls[i]);
         }
 
         UserServices.update({ '_id': userServiceId }, { $addToSet: { images: { $each: imagenes } } }).exec().then(response => {
@@ -81,7 +139,7 @@ function updateImages(req, res) {
         }).catch(err => {
             if (err) {
                 for (let i = 0; i < file_name.length; i++) {
-                    removeFileOfUploads(file_path + file_name[i].filename);
+                    removeFileOfUploads(urls[i].id);
                 }
                 return res.status(200).send({ message: "Error al subir las imagenes" });
             }
@@ -105,12 +163,12 @@ function updateUserServices(req, res) {
 
 function deletePhoto(req, res) {
     var id = req.params.id;
-    var image = req.params.image;
-
-    UserServices.update({ '_id': id }, { $pull: { images: image } }).exec().then(response => {
+    var idimage = req.body.id;
+    UserServices.update({ 'user': id }, { $pull: { 'images': {'id' : idimage} } }).exec().then(response => {
         if (!response) return res.status(200).send({ message: 'Error al borrar la imagen' });
         if (response) {
-            removeFileOfUploads(file_path + image);
+            console.log(response);
+            removeFileOfUploads(idimage);
             return res.status(200).send({ message: 'Imagen borrada con éxito' });
         }
     }).catch(error => {
@@ -119,12 +177,6 @@ function deletePhoto(req, res) {
         }
     });
 
-}
-
-//MANEJO DE ARCHIVOS
-function removeFileOfUploads(file_path) {
-    fs.unlink(file_path, (err) => {
-    });
 }
 
 
@@ -188,7 +240,7 @@ function deleteUserServices(req, res) {
 
             // Checar imagenes -------------------------------------------------------------------------------
             for (let i = 0; i < serviceImagesPaths.length; i++) {
-                removeFileOfUploads(res, userServicesImagePath + serviceImagesPaths[i], "Imagen borrada correctamente");
+                removeFileOfUploads(serviceImagesPaths[i].id);
             }
 
             return res.status(200).send({ message: 'Servicio borrado correctamente' });
@@ -207,6 +259,12 @@ function getServiceImage(req, res) {
         }
     });
 }
+
+/* -------------Remover la imagen del server--------------------- */
+function removeFileOfUploads(old_file_name) {
+    cloudinaryApi.v2.uploader.destroy(old_file_name, function (result) { console.log(result) });
+}
+
 
 module.exports = {
     home,

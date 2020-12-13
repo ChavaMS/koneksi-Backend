@@ -5,9 +5,24 @@ var User = require('../models/User');
 var uploadProducts = require("../middlewares/storageProducts");
 var userProductsImagePath = "./uploads/userProducts/products/";
 const Transaction = require("mongoose-transactions");
+const cloudinary = require('../middlewares/cloudinary');
+
+/*------------------- CLOUDINARY --------------*/
+const cloudinaryApi = require('cloudinary');
+const dotenv = require('dotenv');
+
+dotenv.config({ path: 'cloudinary.env' });
+
+cloudinaryApi.config({
+    cloud_name: process.env.CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+})
+//-------------------------------------------
 
 var fs = require('fs');
 var path = require('path');
+const { url } = require('inspector');
 
 
 //-------PRUEBAS--------
@@ -32,7 +47,7 @@ FORM-DATA:
     URL: /save-products
 */
 function saveProducts(req, res) {
-    uploadProducts(req, res, function (err) {
+    uploadProducts(req, res, async function (err) {
         if (err) {
 
             console.log(err);
@@ -47,7 +62,25 @@ function saveProducts(req, res) {
         var file_name = req.files;
         var error = false;
 
+        const uploader = async (path) => await cloudinary.uploads(path, 'uploads/userProducts');
+        var files = req.files;
 
+        if (req.method === 'POST') {
+            var urls = new Array();
+            for (const file of files) {
+                const { path } = file;
+                const newPath = await uploader(path)
+                urls.push(newPath)
+                fs.unlinkSync(path)
+            }
+
+        } else {
+            res.status(405).json({
+                err: `${req.method} method not allowed`
+            })
+        }
+
+        console.log(urls[0]);
         try {
 
             if (!Array.isArray(params.description)) {
@@ -55,7 +88,7 @@ function saveProducts(req, res) {
                 userProducts.original_name = params.name;
                 userProducts.description = params.description;
                 userProducts.price = params.price;
-                userProducts.image = file_name.filename;
+                userProducts.image = urls;
                 userProducts.user = params.id;
 
                 //Se representa como ["tag1,tag2", "tag1,tag2"] 
@@ -71,7 +104,7 @@ function saveProducts(req, res) {
                         userProducts.original_name = params.name[i];
                         userProducts.description = params.description[i];
                         userProducts.price = params.price[i];
-                        userProducts.image = file_name[i].filename;
+                        userProducts.image = urls[i];
                         userProducts.user = params.id;
 
                         //Se representa como ["tag1,tag2", "tag1,tag2"] 
@@ -94,14 +127,15 @@ function saveProducts(req, res) {
                 transaction.rollback();
                 transaction.clean();
                 for (let i = 0; i < file_name.length; i++) {
-                    removeFileOfUploads(res, userProductsImagePath + file_name[i].filename, "Error al actualizar el banner");
+                    removeFileOfUploads(urls[i].id);
                 }
                 return res.status(200).send({ message: "Error al agregar los productos" });
             }
 
         } catch (error) {
+            console.log(error);
             for (let i = 0; i < file_name.length; i++) {
-                removeFileOfUploads(res, userProductsImagePath + file_name[i].filename, "Error al actualizar el banner");
+                removeFileOfUploads(urls[i]);
             }
             console.error(error);
             transaction.rollback().catch(console.error);
@@ -122,7 +156,7 @@ function deleteProduct(req, res) {
     var userProductId = 0;
 
     UserProducts.findById({ '_id': productId }, (err, product) => {
-        productImagePath = product.image;
+        productImagePath = product.image[0].id;
         userProductId = product.user;
 
         //Se comrpueba que el que va a borrar el producto, sea el que lo creó
@@ -130,7 +164,7 @@ function deleteProduct(req, res) {
             UserProducts.deleteOne({ 'user': req.user.sub, '_id': productId }, (err, result) => {
                 if (err) return res.status(500).send({ message: 'Error al borrar el product' });
 
-                removeFileOfUploads(res, userProductsImagePath + productImagePath, "Imagen borrada correctamente");
+                removeFileOfUploads(productImagePath);
 
                 return res.status(200).send({ message: 'Producto borrado correctamente' });
             });
@@ -152,7 +186,7 @@ FORM-DATA:
 */
 function updateProduct(req, res) {
 
-    uploadProducts(req, res, function (err) {
+    uploadProducts(req, res, async function (err) {
         if (err) {
             return res.end("Error uploading file 2");
         }
@@ -160,18 +194,33 @@ function updateProduct(req, res) {
         var update = req.body;
         var productImagePath = "";
 
+        const uploader = async (path) => await cloudinary.uploads(path, 'uploads/userProducts');
+        var file = req.files;
+
+        if (req.method === 'POST') {
+            var urls = new Array();
+            const { path } = file;
+            const newPath = await uploader(path)
+            urls.push(newPath)
+            fs.unlinkSync(path)
+        } else {
+            res.status(405).json({
+                err: `${req.method} method not allowed`
+            })
+        }
+
         if (req.files && req.files[0]) {
             UserProducts.findById({ '_id': productId }, (err, product) => {
-                productImagePath = product.image;
+                productImagePath = product.image[0].id;
             });
 
-            update.image = req.files[0].filename;
+            update.image = urls;
         }
         UserProducts.findByIdAndUpdate(productId, update, { new: true }, (err, productUpdated) => {
             if (err) return res.status(500).send({ message: 'Error en la petición' });
 
             if (!productUpdated) return res.status(404).send({ message: 'No se ha podido actualizar el producto' });
-            if (req.files && req.files[0]) removeFileOfUploads(res, userProductsImagePath + productImagePath, "Imagen borrada correctamente");
+            if (req.files && req.files[0]) removeFileOfUploads(productImagePath);
 
             return res.status(200).send({
                 product: productUpdated
@@ -190,14 +239,29 @@ FORM-DATA:
     INCLUDE - AUTHETICATION
 */
 function saveProduct(req, res) {
-    uploadProducts(req, res, function (err) {
+    uploadProducts(req, res,async function (err) {
         if (err) {
             return res.end("Error uploading file 2");
         }
 
+        const uploader = async (path) => await cloudinary.uploads(path, 'uploads/userProducts');
+        var file = req.file;
+
+        if (req.method === 'POST') {
+            var urls = new Array();
+            const { path } = file;
+            const newPath = await uploader(path)
+            urls.push(newPath)
+            fs.unlinkSync(path)
+        } else {
+            res.status(405).json({
+                err: `${req.method} method not allowed`
+            })
+        }
+
         //DATOS
         var params = req.body;
-        var file_name = req.files[0].filename;
+        var file_name = urls;
 
         let userProducts = new UserProducts();
 
@@ -205,19 +269,19 @@ function saveProduct(req, res) {
         userProducts.original_name = params.name;
         userProducts.description = params.description;
         userProducts.price = params.price;
-        userProducts.image = file_name.filename;
+        userProducts.image = file_name;
         userProducts.user = req.user.sub;
 
         userProducts.save((err, productStored) => {
             if (err) {
-                removeFileOfUploads(res, userProductsImagePath + file_name, "Error al guardar el producto");
+                removeFileOfUploads(file_name.id);
                 return res.status(200).send({ message: 'Error al guardar el producto' });
             }
 
             if (productStored) {
                 res.status(200).send({ user: productStored });
             } else {
-                removeFileOfUploads(res, userProductsImagePath + file_name, "Error al guardar el producto");
+                removeFileOfUploads(file_name.id);
                 return res.status(200).send({ message: 'Error al guardar el producto' });
             }
         });
@@ -317,22 +381,17 @@ async function getUser(id) {
 
 }
 
-function arrayMix(arreglo) {
-    for (let i = arreglo.length - 1; i > 0; i--) {
-        let indiceAleatorio = Math.floor(Math.random() * (i + 1));
-        let temporal = arreglo[i];
-        arreglo[i] = arreglo[indiceAleatorio];
-        arreglo[indiceAleatorio] = temporal;
-    }
-
-    return arreglo;
-}
 
 //MANEJO DE ARCHIVOS
-function removeFileOfUploads(res, file_path, message) {
+/* function removeFileOfUploads(res, file_path, message) {
     fs.unlink(file_path, (err) => {
     });
 }
+ */
+function removeFileOfUploads(old_file_name) {
+    cloudinaryApi.v2.uploader.destroy(old_file_name, function (result) { console.log(result) });
+}
+
 
 /*
     URL: /get-product-image/:imageFile -> id de la imagen

@@ -13,8 +13,20 @@ var jwt = require('../services/jwt.js');
 var fs = require('fs');
 var path = require('path');
 var axios = require('axios');
+const cloudinary = require('../middlewares/cloudinary');
 
+/*------------------- CLOUDINARY --------------*/
+const cloudinaryApi = require('cloudinary');
+const dotenv = require('dotenv');
 
+dotenv.config({ path: 'cloudinary.env' });
+
+cloudinaryApi.config({
+    cloud_name: process.env.CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+})
+//-------------------------------------------
 //-------PRUEBAS--------
 function home(req, res) {
     res.status(200).send({ message: 'Hola mundo' });
@@ -43,10 +55,25 @@ function pruebas(req, res) {
 
 */
 function saveUser(req, res) {
-    uploadProfile(req, res, function (err) {
+    uploadProfile(req, res, async function (err) {
         if (err) {
             console.log(err);
             return res.end("Error uploading file 1");
+        }
+
+        const uploader = async (path) => await cloudinary.uploads(path, 'uploads/user/profile');
+        var file = req.file;
+
+        if (req.method === 'POST') {
+            var urls = new Array();
+            const { path } = file;
+            const newPath = await uploader(path)
+            urls.push(newPath)
+            fs.unlinkSync(path)
+        } else {
+            res.status(405).json({
+                err: `${req.method} method not allowed`
+            })
         }
 
         //DATOS
@@ -74,7 +101,8 @@ function saveUser(req, res) {
                 user.type = params.type;
 
                 //IMAGENES
-                user.image = file_name;
+                //user.image = file_name;
+                user.image = urls;
                 user.cover_page = null;
 
                 //UBICACION
@@ -103,6 +131,7 @@ function saveUser(req, res) {
 
                             user.save((err, userStored) => {
                                 if (err) {
+                                    console.log(err);
                                     return removeFileOfUploads(res, userProfilePath + file_name, "Error al guardar el usuario");
                                 }
                                 if (userStored) {
@@ -249,28 +278,46 @@ async function location(params) {
         lon = resp.data.results[0].geometry.location.lng;
     });
 
-    return{
+    return {
         lat,
         lon
     }
 }
 
 
-function updateCoverPage(req, res) {
-    uploadBanner(req, res, function (err) {
+async function updateCoverPage(req, res) {
+    uploadBanner(req, res, async function (err) {
         if (err) {
             return res.end("Error uploading file");
         }
+
+        const uploader = async (path) => await cloudinary.uploads(path, 'uploads/user/banner');
+        var file = req.file;
+
+        if (req.method === 'POST') {
+            var urls = new Array();
+            const { path } = file;
+            const newPath = await uploader(path)
+            urls.push(newPath)
+            fs.unlinkSync(path)
+
+
+        } else {
+            res.status(405).json({
+                err: `${req.method} method not allowed`
+            })
+        }
+
         //DATOS
         var email = req.body.email;
-        var file_name = req.file.filename;
+        var file_name = urls
         var old_file_name = '';
         User.find({ email: email }).exec((err, user) => {
             if (err) {
                 return res.status(200).send({ message: 'Error al obtener la imagen del usuario' });
             }
             if (user) {
-                old_file_name = user.image;
+                old_file_name = user[0].cover_page ? user[0].cover_page[0].id : '';
                 if (email && file_name) {
                     User.findOneAndUpdate({ email: email }, { $set: { cover_page: file_name } }).exec((err, user) => {
                         if (err) {
@@ -278,7 +325,8 @@ function updateCoverPage(req, res) {
                         }
 
                         if (user) {
-                            removeFileOfUploads(res, userCoverPath + old_file_name, user);
+                            removeFileOfUploads(old_file_name);
+                            return res.status(200).send({ message: 'Imagen cargada correctamente' });
                         }
                     });
                 }
@@ -288,28 +336,46 @@ function updateCoverPage(req, res) {
 }
 
 function updateAvatar(req, res) {
-    uploadAvatar(req, res, function (err) {
+    uploadAvatar(req, res, async function (err) {
         if (err) {
             return res.end("Error uploading file");
         }
 
+        const uploader = async (path) => await cloudinary.uploads(path, 'uploads/user/profile');
+        var file = req.file;
+
+        if (req.method === 'POST') {
+            var urls = new Array();
+            const { path } = file;
+            const newPath = await uploader(path)
+            urls.push(newPath)
+            fs.unlinkSync(path)
+
+
+        } else {
+            res.status(405).json({
+                err: `${req.method} method not allowed`
+            })
+        }
+
+
         //DATOS
         var email = req.body.email;
-        var file_name = req.file.filename;
+        var file_name = urls;
         var old_file_name = '';
         User.find({ email: email }).exec((err, user) => {
             if (err) {
                 return res.status(200).send({ message: 'Error al obtener la imagen del usuario' });
             }
             if (user) {
-                old_file_name = user.image;
+                old_file_name = user[0].image ? user[0].image[0].id : '';
                 if (email && file_name) {
                     User.findOneAndUpdate({ email: email }, { $set: { image: file_name } }).exec((err, user) => {
                         if (err) {
-                            return removeFileOfUploads(res, userProfilePath + file_name, "Error al actualizar el avatar");
+                            return removeFileOfUploads(file_name.id);
                         }
                         if (user) {
-                            removeFileOfUploads(res, userProfilePath + old_file_name, user);
+                            removeFileOfUploads(old_file_name);
                         }
                     });
                 }
@@ -320,12 +386,16 @@ function updateAvatar(req, res) {
 
 
 //MANEJO DE ARCHIVOS
-function removeFileOfUploads(res, file_path, message) {
+/* function removeFileOfUploads(res, file_path, message) {
     fs.unlink(file_path, (err) => {
         return res.status(200).send({ message: message });
     });
 }
+ */
 
+function removeFileOfUploads(old_file_name) {
+    cloudinaryApi.v2.uploader.destroy(old_file_name, function (result) { console.log(result) });
+}
 
 function getImageProfile(req, res) {
     var imageFile = req.params.imageFile;

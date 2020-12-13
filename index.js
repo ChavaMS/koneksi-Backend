@@ -21,7 +21,7 @@ mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology
 
         //Crear servidor
         app.listen(port, host, () => {
-            console.log('Servidor corriendo en http://localhost:3800');
+            console.log('Servidor corriendo en ' + host + ':' + port);
         });
 
     }).catch(err => {

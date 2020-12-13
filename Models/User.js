@@ -14,8 +14,8 @@ var UserSchema = Schema({
     surname: String,
     email: String,
     password: String,
-    image: String,
-    cover_page: String,
+    image: [Object],
+    cover_page: [Object],
     type: String, //Literalmente la palabra UserJob, UserProduct o UserService
     lat: String,
     lon: String,

@@ -2,9 +2,7 @@
 
 var moment = require('moment'); //tiempo
 var mongoosePaginate = require('mongoose-pagination');
-
-//var User = require('../Models/User');
-var Message = require('../Models/Messages');    
+var Message = require('../models/Messages');    
 
 function probando(req, res){
     res.status(200).send({message: 'Probando'});

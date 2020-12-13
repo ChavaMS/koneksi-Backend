@@ -199,7 +199,12 @@ function getUserJobs(req, res) {
 
             //Total de paginas
             var total = await UserJobs.aggregate([{ $group: { _id: "$user" } }, { $count: 'total' }]);
-            var totalPages = Math.ceil(total[0].total / itemsPerPage);
+            var totalPages;
+            if(total && total > 0){
+                totalPages = Math.ceil(total[0].total / itemsPerPage);
+            }else{
+                totalPages = 0;
+            }
 
             return res.status(200).send({
                 userJobsArray,

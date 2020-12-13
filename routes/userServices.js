@@ -10,7 +10,7 @@ api.get('/get-user-services/:id?/:page?', UserServicesController.getUserservices
 api.get('/get-service-image/:imageFile', UserServicesController.getServiceImage);
 api.post('/saveUserServices', UserServicesController.saveUserServices);
 api.delete('/deleteUserServices', UserServicesController.deleteUserServices);
-api.put('/delete-photo/:id/:image', UserServicesController.deletePhoto);
+api.put('/delete-photo/:id', UserServicesController.deletePhoto);
 api.put('/update-images', UserServicesController.updateImages);
 
 module.exports = api; 
