@@ -10,7 +10,6 @@ var md_auth = require('../middlewares/authenticate');
 //RUTAS GET
 api.get('/pruebas-products', UserProductsController.pruebas);
 api.get('/home', UserProductsController.home);
-api.get('/get-product-image/:imageFile', UserProductsController.getImageProduct);
 
 //RUTAS POST
 api.post('/save-products', UserProductsController.saveProducts);

@@ -3,11 +3,11 @@
 var UserProducts = require('../models/UserProducts');
 var User = require('../models/User');
 var uploadProducts = require("../middlewares/storageProducts");
-var userProductsImagePath = "./uploads/userProducts/products/";
 const Transaction = require("mongoose-transactions");
 const cloudinary = require('../middlewares/cloudinary');
 
 /*------------------- CLOUDINARY --------------*/
+//API para que conecta con CLOUDINARY para almacenar fotos
 const cloudinaryApi = require('cloudinary');
 const dotenv = require('dotenv');
 
@@ -46,6 +46,7 @@ FORM-DATA:
 
     URL: /save-products
 */
+//Metodo que guarda los productos de un usuario en el registro
 function saveProducts(req, res) {
     uploadProducts(req, res, async function (err) {
         if (err) {
@@ -150,6 +151,7 @@ function saveProducts(req, res) {
     URL: /deleteProduct/:id -> id del producto a eliminar
     INCLUDE - AUTHENTICATION
 */
+//Método que elimina un producto de un usuario
 function deleteProduct(req, res) {
     var productId = req.params.id;
     var productImagePath = "";
@@ -184,6 +186,7 @@ FORM-DATA:
     URL: /update-product/:id -> id del producto a editar
     INCLUDE - AUTHENTICATION
 */
+//Método que actualiza los productos
 function updateProduct(req, res) {
 
     uploadProducts(req, res, async function (err) {
@@ -238,6 +241,7 @@ FORM-DATA:
     URL: /save-product
     INCLUDE - AUTHETICATION
 */
+//Método que guarda los productos de un usuario 
 function saveProduct(req, res) {
     uploadProducts(req, res,async function (err) {
         if (err) {
@@ -292,6 +296,7 @@ function saveProduct(req, res) {
     URL: /get-products/:id -> id de un cliente
     URL: /get-products     -> Todos los productos
 */
+//Método que retorna los productos en general o los productos de un usuario
 async function getProducts(req, res) {
     var userId = req.params.id;
 
@@ -344,7 +349,6 @@ async function getProducts(req, res) {
                 userProductsArray,
                 total: totalPages
             });
-
         }).catch(err => {
             console.log(err);
             if (err) {
@@ -352,12 +356,10 @@ async function getProducts(req, res) {
 
             }
         });
-
-
     }
-
 }
 
+//Metodo auxiliar que retorna al usuario y sus productos
 async function getUser(id) {
     var usuario = await User.find({ _id: id }, { password: 0 }).exec().then((result) => {
         return result[0];
@@ -381,32 +383,12 @@ async function getUser(id) {
 
 }
 
-
-//MANEJO DE ARCHIVOS
-/* function removeFileOfUploads(res, file_path, message) {
-    fs.unlink(file_path, (err) => {
-    });
-}
- */
+//Método que remueve los archivos del servidor cloudinary
 function removeFileOfUploads(old_file_name) {
     cloudinaryApi.v2.uploader.destroy(old_file_name, function (result) { console.log(result) });
 }
 
 
-/*
-    URL: /get-product-image/:imageFile -> id de la imagen
-*/
-function getImageProduct(req, res) {
-    var imageFile = req.params.imageFile;
-    var path_file = 'uploads/userProducts/products/' + imageFile;
-    fs.exists(path_file, (exists) => {
-        if (exists) {
-            res.sendFile(path.resolve(path_file));
-        } else {
-            res.status(200).send({ message: 'No existe la imagen' });
-        }
-    });
-}
 
 module.exports = {
     home,
@@ -415,6 +397,5 @@ module.exports = {
     deleteProduct,
     updateProduct,
     saveProduct,
-    getProducts,
-    getImageProduct
+    getProducts
 }

@@ -9,6 +9,11 @@ function probando(req, res) {
     res.status(200).send({ message: 'Probando' });
 }
 
+
+/* 
+    RUTA POR POST: /comment
+*/
+//Método que guarda el comentario  
 function saveComment(req, res) {
     var params = req.body;
 
@@ -29,6 +34,10 @@ function saveComment(req, res) {
     });
 }
 
+/* 
+    RUTA POR POST: /deleteComment
+*/
+//Metodo que elimina
 function deleteComment(req, res) {
     var Id = req.body.receiverId;
     Comment.remove({ "_id": Id, "emitter": req.user.sub }).exec((err, delCom) => {
@@ -37,18 +46,10 @@ function deleteComment(req, res) {
     });
 }
 
-function updateComment(req, res) {
-    var productId = req.params.id;
-    var update = req.body;
-
-    Comment.findByIdAndUpdate(productId, update, { new: true }, (err, productUpdated) => {
-        if (err) return res.status(500).send({ message: 'Error en la petición' });
-        return res.status(200).send({
-            product: productUpdated
-        });
-    });
-}
-
+/* 
+    RUTA POR POST: /getComment/:page?
+*/
+//Metodo que retorna los comentarios de un usuario
 function getComments(req, res) {
     var userId = req.body.receiver;
     var actId = req.body.activity_id;
@@ -71,6 +72,9 @@ function getComments(req, res) {
     });
 }
 
+/* 
+    RUTA POR POST: /saveRating
+*/
 //Verificar que solo se pueda dejar un rating por persona
 function saveRating(req, res) {
 
@@ -102,6 +106,10 @@ function saveRating(req, res) {
 
 }
 
+/* 
+    RUTA POR POST: /getRating/:userSaved
+*/
+//Método que obtiene el rating de un usuario
 function getRating(req, res) {
     var userSav = req.params.userSaved;
 
@@ -125,6 +133,10 @@ function getRating(req, res) {
     });
 }
 
+/* 
+    RUTA POR POST: /getDistance
+*/
+//Metodo que retorna la distancia entre dos puntos (latFrom, lonFrom, latTo, lonTo)
 function getDistance(req, res){
     var origin = req.body.latFrom + ',' + req.body.lonFrom;
     var destination = req.body.latTo + ',' + req.body.lonTo;
@@ -151,7 +163,6 @@ module.exports = {
     probando,
     saveComment,
     deleteComment,
-    updateComment,
     getComments,
     saveRating,
     getRating,

@@ -16,6 +16,7 @@ var axios = require('axios');
 const cloudinary = require('../middlewares/cloudinary');
 
 /*------------------- CLOUDINARY --------------*/
+//API para que conecta con CLOUDINARY para almacenar fotos
 const cloudinaryApi = require('cloudinary');
 const dotenv = require('dotenv');
 
@@ -27,6 +28,8 @@ cloudinaryApi.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 })
 //-------------------------------------------
+
+
 //-------PRUEBAS--------
 function home(req, res) {
     res.status(200).send({ message: 'Hola mundo' });
@@ -131,6 +134,7 @@ function saveUser(req, res) {
 
                             user.save((err, userStored) => {
                                 if (err) {
+                                    console.log('sdsdsd');
                                     console.log(err);
                                     return removeFileOfUploads(res, userProfilePath + file_name, "Error al guardar el usuario");
                                 }
@@ -154,6 +158,11 @@ function saveUser(req, res) {
 
 }
 
+
+/* 
+    LOGIN DEL USUARIO
+    RUTA POR POST: /login
+*/
 function loginUser(req, res) {
     var params = req.body;
 
@@ -208,7 +217,9 @@ function loginUser(req, res) {
 
 }
 
-
+/* 
+    RUTA POR POST: /updateCoverPage
+*/
 //Edicion de datos de usuario
 function updateUser(req, res) {
     var userId = req.params.id;
@@ -242,7 +253,10 @@ function updateUser(req, res) {
     });
 }
 
-
+/* 
+    RUTA POR PUT: /update-location/:id
+*/
+//Método que actualiza la ubiacion dle usuario
 async function updateLocation(req, res) {
     var userId = req.params.id;
     var update = req.body;
@@ -265,6 +279,7 @@ async function updateLocation(req, res) {
 
 }
 
+//Metodo de apoyo para obtiene la ubicacion del usuario
 async function location(params) {
     let location = params.cp + ' ' + params.street + ' ' + params.suburb + ',' + params.city + ' ' + params.state + ' Mexico';
     var lat, lon;
@@ -284,7 +299,10 @@ async function location(params) {
     }
 }
 
-
+/* 
+    RUTA POR POST: /updateCoverPage
+*/
+//Método que actualiza el banner del usuario
 async function updateCoverPage(req, res) {
     uploadBanner(req, res, async function (err) {
         if (err) {
@@ -335,6 +353,10 @@ async function updateCoverPage(req, res) {
     });
 }
 
+/* 
+    RUTA POR POST: /updateAvatar
+*/
+//Método que actualiza la imagen avatar del usuario
 function updateAvatar(req, res) {
     uploadAvatar(req, res, async function (err) {
         if (err) {
@@ -384,50 +406,17 @@ function updateAvatar(req, res) {
     });
 }
 
-
-//MANEJO DE ARCHIVOS
-/* function removeFileOfUploads(res, file_path, message) {
-    fs.unlink(file_path, (err) => {
-        return res.status(200).send({ message: message });
-    });
-}
- */
-
+//Metodo que remueve la imagen del servidor de imagenes
 function removeFileOfUploads(old_file_name) {
     cloudinaryApi.v2.uploader.destroy(old_file_name, function (result) { console.log(result) });
 }
 
-function getImageProfile(req, res) {
-    var imageFile = req.params.imageFile;
-    var path_file = 'uploads/users/profile/' + imageFile;
-    fs.exists(path_file, (exists) => {
-        if (exists) {
-            res.sendFile(path.resolve(path_file));
-        } else {
-            res.status(200).send({ message: 'No existe la imagen' });
-        }
-    });
-}
-
-function getImageCover(req, res) {
-    var imageFile = req.params.imageFile;
-    var path_file = 'uploads/users/banner/' + imageFile;
-    fs.exists(path_file, (exists) => {
-        if (exists) {
-            res.sendFile(path.resolve(path_file));
-        } else {
-            res.status(200).send({ message: 'No existe la imagen' });
-        }
-    });
-}
 
 module.exports = {
     pruebas,
     home,
     saveUser,
     updateCoverPage,
-    getImageProfile,
-    getImageCover,
     loginUser,
     updateUser,
     updateAvatar,

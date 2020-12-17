@@ -1,7 +1,10 @@
 'use strict'
 
-var moment = require('moment'); //tiempo
-var mongoosePaginate = require('mongoose-pagination');
+/* 
+CONTROLADOR PREPARADO PARA FUTURAS IMPLEMENTACIONES
+****NO INTRODUCIDO EN VERSION 1 DEL PROYECTO*******
+*/
+
 var Message = require('../models/Messages');    
 
 function probando(req, res){
@@ -37,6 +40,10 @@ function saveMessage(req, res){
     });
 }
 
+/* 
+    RUTA POR GET: /my-messages
+*/
+//Metodo que retorna los mensajes recibidos por un usuario
 function getReceivedMessages(req, res){
     var userId = req.user.sub;
 
@@ -58,6 +65,11 @@ function getReceivedMessages(req, res){
     });
 }
 
+
+/* 
+    RUTA POR GET: /my-rec-messages
+*/
+//Metodo que retorna los mensaje enviados
 function getEmmitMessages(req, res){
     var userId = req.user.sub;
 
@@ -80,6 +92,10 @@ function getEmmitMessages(req, res){
     });
 }
 
+/* 
+    RUTA POR GET: /unviewed-messages
+*/
+//Metodo que retorna el numero de mensajes no leidos
 function getUnviewedMessages(req, res){
     var userId = req.user.sub;
 
@@ -97,6 +113,4 @@ module.exports = {
     getReceivedMessages,
     getEmmitMessages,
     getUnviewedMessages
-    //Quitar el no visto
-    //Abrir mensaje individual
 };

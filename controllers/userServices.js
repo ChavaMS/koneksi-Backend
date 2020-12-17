@@ -2,11 +2,11 @@
 
 const UserServices = require('../models/UserServices');
 const uploadServices = require("../middlewares/storageServices"); // Para imágenes
-const multer = require('multer');
 const User = require('../models/User');
 const cloudinary = require('../middlewares/cloudinary');
 
 /*------------------- CLOUDINARY --------------*/
+//API para que conecta con CLOUDINARY para almacenar fotos
 const cloudinaryApi = require('cloudinary');
 const dotenv = require('dotenv');
 
@@ -26,14 +26,17 @@ function home(req, res) {
     res.status(200).send({ message: 'Hola mundo' });
 }
 
-// Registro
+/* 
+    RUTA POR POST: /saveUserServices
+*/
+// Método que realiza el registro de los servicios de una empresa
 function saveUserServices(req, res) {
 
     // Error de la imagen
     uploadServices(req, res, async function (err) {
         if (err) {
             console.log(err);
-            return res.status(500).send("Error al subir el archivo");
+            return res.status(500).send("Error al subir el archivo");0
         }
 
         const uploader = async (path) => await cloudinary.uploads(path, 'uploads/userService');
@@ -97,6 +100,10 @@ function saveUserServices(req, res) {
     });
 }
 
+/* 
+    RUTA POR PUT: /update-images
+*/
+//Método que actualiza la imagen de un servicio
 function updateImages(req, res) {
     uploadServices(req, res, async function (err) {
         if (err) {
@@ -148,6 +155,10 @@ function updateImages(req, res) {
     });
 }
 
+/* 
+    RUTA POR POST: /updateUserServices/:id
+*/
+//Método que actualiza los datos del servicio de un usuario
 function updateUserServices(req, res) {
     var userServicesId = req.params.id;
     var update = req.body;
@@ -161,6 +172,10 @@ function updateUserServices(req, res) {
 }
 
 
+/* 
+    RUTA POR PUT: /delete-photo/:id
+*/
+//Método que elimina una foto de un servicio 
 function deletePhoto(req, res) {
     var id = req.params.id;
     var idimage = req.body.id;
@@ -179,7 +194,10 @@ function deletePhoto(req, res) {
 
 }
 
-
+/* 
+    RUTA POR GET: /get-user-services/:id?/:page?
+*/
+//Método que retorna los servicios en general o el servicio de un usuario
 function getUserservices(req, res) {
     var userId = req.params.id;
 
@@ -219,6 +237,10 @@ function getUserservices(req, res) {
     }
 }
 
+/* 
+    RUTA POR DELETE: /deleteUserServices
+*/
+//Método que borra el servicio de un usuario
 function deleteUserServices(req, res) {
     var serviceId = req.params.id;
     var serviceImagesPaths = [];
@@ -248,17 +270,6 @@ function deleteUserServices(req, res) {
     }
 }
 
-function getServiceImage(req, res) {
-    var imageFile = req.params.imageFile;
-    var path_file = 'uploads/userServices/' + imageFile;
-    fs.exists(path_file, (exists) => {
-        if (exists) {
-            res.sendFile(path.resolve(path_file));
-        } else {
-            res.status(200).send({ message: 'No existe la imagen' });
-        }
-    });
-}
 
 /* -------------Remover la imagen del server--------------------- */
 function removeFileOfUploads(old_file_name) {
@@ -272,7 +283,6 @@ module.exports = {
     updateUserServices,
     getUserservices,
     deleteUserServices,
-    getServiceImage,
     deletePhoto,
     updateImages
 }

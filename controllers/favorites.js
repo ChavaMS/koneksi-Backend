@@ -1,5 +1,10 @@
 'use strict'
 
+/* 
+CONTROLADOR PREPARADO PARA FUTURAS IMPLEMENTACIONES
+****NO INTRODUCIDO EN VERSION 1 DEL PROYECTO*******
+*/
+
 var Favorite = require('../models/Favorites');
 var UserJobs = require('../models/UserJob');
 var UserServices = require('../models/UserServices');
@@ -8,6 +13,10 @@ function probando(req, res){
     res.status(200).send({message: 'Probando'});
 }
 
+/* 
+ RUTA POR GET: /saveFavorite
+*/
+//Retorna los usuarios favoritos agregados por otro usuario
 function getFavorite(req, res){
     var user = req.user.sub;
 
@@ -50,7 +59,10 @@ function getFavorite(req, res){
     });
 }
 
-//agregar validador de que no exista el registro antes
+/* 
+    RUTA POR GET: /getFavorite
+*/
+//Agregar validador de que no exista el registro antes
 function saveFavorite(req, res){
     var favorite = new Favorite();
 
@@ -66,6 +78,10 @@ function saveFavorite(req, res){
 }
 
 
+/*  
+    RUTA POR GET: /removeFavorite
+*/
+//Remueve al usuario agregado a favoritos del usuario seleccionado
 function removeFavorite(req, res){
     var id = req.body.id;
     Favorite.remove({"_id":id, "user": req.user.sub}).exec((err, delFav) => {

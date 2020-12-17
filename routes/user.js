@@ -9,8 +9,6 @@ var md_auth = require('../middlewares/authenticate');
 //RUTAS GET
 api.get('/pruebas', UserController.pruebas);
 api.get('/home', UserController.home);
-api.get('/get-image-profile/:imageFile', UserController.getImageProfile);
-api.get('/get-image-cover/:imageFile', UserController.getImageCover);
 
 //RUTAS PUT
 api.put('/update-user/:id', md_auth.ensureAuth, UserController.updateUser);

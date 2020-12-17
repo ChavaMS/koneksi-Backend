@@ -6,8 +6,6 @@ const User = require('../models/User');
 var Jobs = require('../models/Jobs');
 
 
-
-
 //-------PRUEBAS--------
 function home(req, res) {
     res.status(200).send({ message: 'Hola mundo' });
@@ -40,8 +38,6 @@ function saveUserJobs(req, res) {
     //console.log(params);
     var transaction = new Transaction();
     var userJobs = new UserJobs();
-
-
 
     try {
         if (!Array.isArray(params)) {
@@ -104,6 +100,7 @@ function saveUserJobs(req, res) {
 /* 
     URL: /delete-job/:id -> id del oficio
 */
+//Método que elimina un oficio del un usuario
 function deleteUserJob(req, res) {
 
     var userJobId = req.params.id;
@@ -140,6 +137,7 @@ x-www-form-utlencoded:
 
     URL: /update-user-job/:id -> id del trabajo a editar
 */
+//Método que actualiza los oficios de un usuario
 function updateUserJob(req, res) {
 
     var userJobId = req.params.id;
@@ -159,6 +157,7 @@ function updateUserJob(req, res) {
     URL: /get-user-jobs/:id -> id del cliente con oficios
     URL: /get-user-jobs     -> Todos los oficios creados
 */
+//Metodo que retorna los oficios de un usuario o todos los oficios de todos los usuarios
 function getUserJobs(req, res) {
     var userId = req.params.id;
 
@@ -200,9 +199,9 @@ function getUserJobs(req, res) {
             //Total de paginas
             var total = await UserJobs.aggregate([{ $group: { _id: "$user" } }, { $count: 'total' }]);
             var totalPages;
-            if(total && total > 0){
+            if (total && total > 0) {
                 totalPages = Math.ceil(total[0].total / itemsPerPage);
-            }else{
+            } else {
                 totalPages = 0;
             }
 
@@ -221,6 +220,7 @@ function getUserJobs(req, res) {
 
 }
 
+//Método auxiliar que retorna al usuario y sus oficios
 async function getUser(id) {
     var usuario = await User.find({ _id: id }, { password: 0 }).exec().then((result) => {
         return result[0];
@@ -244,17 +244,6 @@ async function getUser(id) {
 }
 
 
-function arrayMix(arreglo) {
-    for (let i = arreglo.length - 1; i > 0; i--) {
-        let indiceAleatorio = Math.floor(Math.random() * (i + 1));
-        let temporal = arreglo[i];
-        arreglo[i] = arreglo[indiceAleatorio];
-        arreglo[indiceAleatorio] = temporal;
-    }
-
-    return arreglo;
-}
-
 /* 
 x-www-form-utlencoded:
     *description
@@ -264,6 +253,7 @@ x-www-form-utlencoded:
 
     URL: /save-user-job
 */
+//Metodo que guarda un oficio en un usuarios
 function saveUserJob(req, res) {
     //DATOS
     var params = req.body;
@@ -292,6 +282,10 @@ function saveUserJob(req, res) {
 
 }
 
+/* 
+    RUTA POR POST: /get-jobs
+*/
+//Metodo que retorna los oficios por default
 function getJobs(req, res) {
     Jobs.find().exec().then(response => {
         if (response) {
